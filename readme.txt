@@ -1,0 +1,1 @@
+This project contains the automation script in python to update the cron bid price sheet for 138 website.
