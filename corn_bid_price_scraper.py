@@ -3,6 +3,8 @@ import os
 import sys
 import time
 from datetime import datetime
+#import pytesseract
+import glob
 
 import requests
 import xlwings as xw
@@ -21,6 +23,8 @@ logfile = os.getcwd() + '\\' + str(datetime.today().date()) + '_CornBidPrice_Log
 logging.basicConfig(filename=logfile, filemode='w',
                     format='%(asctime)s %(message)s')
 
+download_path = os.getcwd() + '\\download\\'
+
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
@@ -34,7 +38,7 @@ driver = webdriver.Chrome(options=options, executable_path=DRIVER_PATH)
 
 # month list used to check name of months on websites
 month_list = ['jan', 'feb', 'mar', 'apr', 'may', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dec']
-
+month_number_dic = {'jan': '01','feb':'02','mar':'03','apr':'04','may':'05','jun':'06','jul':'07','aug':'08','sep':'09','oct':'10','nov':'11','dec':'12'}
 
 # this section is used to define future months
 # that are to be set as new columns in the new sheet
@@ -314,7 +318,7 @@ def scrape_admfarm(url):
         print(sys.exc_info()[0])
         print("error occoured with website:", url)
         logger.info(sys.exc_info()[0])
-        logger.info("error occoured with website:", url)
+        logger.info("error occoured with website: {}".format(url))
         return month_to_basis
 
 
@@ -354,12 +358,79 @@ def scrape_regular_website_1(url, basis_index, iframe_xpath=""):
         logger.info("error occoured with website:", url)
         return month_to_basis
 
+def scrape_cvec(url):
+    month_to_basis = {}
+    try:
+        #driver.get(url)
+        html_content = requests.get(url)
+        #WebDriverWait(driver, 10).until(EC.element_to_be_clickable((By.CLASS_NAME, "DataGrid DataGridPlus")))
+        soup = BeautifulSoup(html_content.content, features='lxml')
+        table = soup.find_all('table', attrs={'class': 'DataGrid DataGridPlus'})[0].find_all('tr')
+        for row in table[1:8]:
+            month = row.find_all('td')[0].text.strip().lower()
+            basis = float(row.find_all('td')[3].find('span').text.strip())
+            index1 = month.find('/')
+            index2 = month.find('/', index1 + 1, len(month))
+            month = month[:index1+1] + '01' + month[index2:]
+            month = datetime.strptime(month, '%m/%d/%y').date()
+            if month in month_to_basis:
+                current = month_to_basis[month]
+                if basis <= 0 and current <= 0:
+                    month_to_basis[month] = round((((-1 * basis) + (-1 * current)) / 2) * -1, 3)
+                else:
+                    month_to_basis[month] = round((basis + current) / 2, 3)
+            else:
+                month_to_basis[month] = basis
+
+        return month_to_basis
+    except Exception:
+        print(sys.exc_info()[0])
+        print("error occoured with website:", url)
+        logger.info(sys.exc_info()[0])
+        logger.info("error occoured with website: {}".format(url))
+        return month_to_basis
+
+def delete_all_files(folder_path:str):
+    files = glob.glob(folder_path+'*')
+    if len(files)>0:
+        for f in files:
+            os.remove(f)
+
+def scrape_homeland(url):
+    month_to_basis = {}
+    try:
+        #download the image and save in local folder
+        year = datetime.now().date().year
+        html_content = requests.get(url)
+        soup = BeautifulSoup(html_content.content, features='lxml')
+        img = soup.find_all('img', attrs={'class': 'vc_single_image-img attachment-full'})
+        img_url = img[0]['src']
+        delete_all_files(download_path)
+        img_data = requests.get(img_url).content
+        with open(download_path+'data_file.png', 'wb') as handler:
+            handler.write(img_data)
+        pytesseract.pytesseract.tesseract_cmd = r'C:\Program Files (x86)\Tesseract\tesseract.exe'
+        str_img_content = pytesseract.image_to_string(download_path+'data_file.png')
+        lst_bids = str_img_content.split('\n')[34:40]
+        for row in lst_bids:
+            month = row.split()[0].strip().lower()
+            basis = float(row.split()[3].strip())
+            month = '01' + month[0:3] + str(year)
+            month = datetime.strptime(month, '%d%b%Y').date()
+            month_to_basis[month] = basis            
+        return month_to_basis
+    except Exception:
+        print(sys.exc_info()[0])
+        print("error occoured with website:", url)
+        logger.info(sys.exc_info()[0])
+        logger.info("error occoured with website: {}".format(url))
+        return month_to_basis
 
 # the function which is used for most of the types of webistes, handles multiple cases
 def scrape_regular_website_2(url, find_by_option, basis_index, month_index=0, table_name='cashbids-data-table',
                              wait_by_option=0, time_flag=0,
                              xpath_for_table="", class_name='DataGrid DataGridPlus', row_start_index=1, table_index=0,
-                             table_id='', iframe_xpath=""):
+                             table_id='', iframe_xpath="", row_end_index=6):
     month_to_basis = dict()
     try:
         year = datetime.now().date().year
@@ -390,11 +461,12 @@ def scrape_regular_website_2(url, find_by_option, basis_index, month_index=0, ta
         elif find_by_option == 4:
             table = soup.find_all('table', attrs={'id': table_id})[table_index].find_all('tr')
 
-        for row in table[row_start_index:6]:
+        for row in table[row_start_index:row_end_index]:
             month = row.find_all('td')[month_index].text.strip().lower()
             basis = float(row.find_all('td')[basis_index].text.strip())
-
+            raw_month = month
             month = month.replace('mch', 'mar') if 'mch' in month else month
+            
             # for dates like - lh dec, fh dec
             if month[0:2] in ('lh', 'fh'):
                 month = month[2:].strip()
@@ -414,7 +486,7 @@ def scrape_regular_website_2(url, find_by_option, basis_index, month_index=0, ta
                 continue
 
             # for dates like - december 2020
-            if month[:3] in month_list:
+            if month[:3] in month_list and '/' not in month:
                 if month[-2:].isdigit():
                     month = '01' + month[0:3] + '20' + month[-2:]
                     month = datetime.strptime(month, '%d%b%Y').date()
@@ -433,13 +505,32 @@ def scrape_regular_website_2(url, find_by_option, basis_index, month_index=0, ta
                     month_to_basis[month] = basis
                     if month.month == 12:
                         year += 1
+             #for dates jfm 21 --> Jan Feb March
+            if 'JFM'.lower() in raw_month:
+                for mth in list(month[0:3]):
+                    if mth == 'j':
+                        month = str(year) + '-01-01'
+                    elif mth == 'f':
+                        month =  str(year) + '-02-01'
+                    elif mth == 'm':
+                        month = str(year) + '-03-01'
+                    month = datetime.strptime(month, '%Y-%m-%d').date()
+                    month_to_basis[month] = basis
+            #for dates April/May 21 like that
+            if str(raw_month[0:3]).isalnum() and raw_month[:3] in month_list and '/' in raw_month:
+                arr_months = raw_month.split()[0].split('/')
+                if len(arr_months) > 0:
+                    for mth in arr_months:
+                        month = str(year) + '-' + str(month_number_dic[mth.lower()[:3]]) + '-01'
+                        month = datetime.strptime(month, '%Y-%m-%d').date()
+                        month_to_basis[month] = basis
 
         return month_to_basis
     except Exception:
         print(sys.exc_info()[0])
         print("error occoured with website:", url)
         logger.info(sys.exc_info()[0])
-        logger.info("error occoured with website:", url)
+        logger.info("error occoured with website: {}".format(url))
         return month_to_basis
 
 
@@ -492,7 +583,7 @@ def fetch_and_insert_regular_websitedata():
         logger.info("success for row 139")
 
     bids = scrape_regular_website_2(url="https://auroracoop.com/markets/", wait_by_option=3, find_by_option=3,
-                                    class_name='section', month_index=0, basis_index=2, table_index=5)
+                                    class_name='section', month_index=0, basis_index=2, table_index=5, row_end_index=7)
     if insert_into_sheet(122, bids):
         insert_into_sheet(125, bids)
         print("success for row 122 and 125")
@@ -526,7 +617,7 @@ def fetch_and_insert_regular_websitedata():
         logger.info("success for row 88")
 
     bids = scrape_regular_website_2(url="http://www.huskerag.com", wait_by_option=1, basis_index=4, month_index=1,
-                                    find_by_option=3, table_index=9,
+                                    find_by_option=3, table_index=1,
                                     xpath_for_table="/html/body/table/tbody/tr[2]/td[2]/table/tbody/tr[3]/td[1]/div/table[4]"
                                                     "/tbody/tr[3]/td[2]/table")
     if insert_into_sheet(93, bids):
@@ -638,7 +729,7 @@ def fetch_and_insert_regular_websitedata():
         logger.info("success for row 165")
 
     bids = scrape_regular_website_2(url="https://www.midmissourienergy.com/markets/cash.php", wait_by_option=4,
-                                    find_by_option=4, basis_index=-3, month_index=1, table_id='dpTable1')
+                                    find_by_option=4, basis_index=-3, month_index=1, table_id='dpTable1', row_end_index=13)
     if insert_into_sheet(111, bids):
         print("success for row 111")
         logger.info("success for row 111")
@@ -675,7 +766,7 @@ def fetch_and_insert_regular_websitedata():
         logger.info("success for row 69")
 
     bids = scrape_regular_website_2(url="https://www.pacificethanol.com/pekin-il-corn", row_start_index=3,
-                                    find_by_option=3, basis_index=2)
+                                    find_by_option=3, basis_index=2, row_end_index=9)
     if insert_into_sheet(121, bids):
         insert_into_sheet(123, bids)
         insert_into_sheet(124, bids)
@@ -683,7 +774,7 @@ def fetch_and_insert_regular_websitedata():
         logger.info("success for row 121, 123, 124")
 
     bids = scrape_regular_website_2(url="https://www.nugenmarion.com", row_start_index=2, table_id='dpTable1',
-                                    wait_by_option=4, find_by_option=4, basis_index=4, month_index=1)
+                                    wait_by_option=4, find_by_option=4, basis_index=4, month_index=1, row_end_index=8)
     if insert_into_sheet(115, bids):
         print("success for row 115")
         logger.info("success for row 115")
@@ -767,6 +858,7 @@ def fetch_and_insert_regular_websitedata():
                             "http://poetbiorefining-lakecrystal.aghost.net/index.cfm?show=11&mid=17": [-1, 150],
                             "http://poetbiorefining-leipsic.aghost.net/index.cfm?show=11&mid=5": [-1, 151],
                             "http://poetbiorefining-marion.aghost.net/index.cfm?show=11&mid=3": [-1, 152],
+                            "http://poetbiorefining-marion.aghost.net/index.cfm?show=11&mid=3": [-1, 153],
                             "http://poetbiorefining-preston.aghost.net/index.cfm?show=11&mid=3": [-1, 157],
                             "http://shb.poetgrain.com/index.cfm?show=11&mid=3": [-1, 158],
                             "http://poetbiorefining-researchcenter.aghost.net/index.cfm?show=11&mid=3": [-1, 159],
@@ -912,6 +1004,17 @@ def fetch_and_insert_regular_websitedata():
         print("success for row 22")
         logger.info("success for row 22")
 
+    # bids = scrape_cvec("http://dtn.cvec.com/index.cfm?show=11&mid=3&cmid=1&layout=1034")
+    # if insert_into_sheet(38, bids):
+    #     print("success for row 38")
+    #     logger.info("success for row 38")
+
+    # bids = scrape_homeland("https://www.homelandenergysolutions.com/grain-bids/")
+    # if insert_into_sheet(92, bids):
+    #     print("success for row 92")
+    #     logger.info("success for row 92")
+
+
 # inserts the input dictionary to a sheet row, expects a dictionary with month-date
 # as key and its basis as value and the row number
 def insert_into_sheet(row_number, bids):
@@ -937,10 +1040,11 @@ def insert_into_sheet(row_number, bids):
         logger.info("empty bids dictionary for row number : " + str(row_number))
         return False
 
-
 def main():
     global bid_prices
     try:
+        starttime=datetime.now()
+        logging.warning('NYISO: Start work at {} ...'.format(starttime.strftime('%Y-%m-%d %H:%M:%S')))
         logger.info("initializing new sheet...")
         status = initialize_new_sheet()
         bid_prices = xw.Book(path)
@@ -969,6 +1073,7 @@ def main():
         scrape_and_insert_gpreinc()
         fetch_and_insert_fhr()
         fetch_and_insert_regular_websitedata()
+
     except Exception:
         print("error occoured in main")
         print(sys.exc_info()[0])
@@ -980,6 +1085,9 @@ def main():
         bid_prices.close()
         driver.close()
         driver.quit()
+        endtime=datetime.now()
+        logging.warning('Complete work at {} ...'.format(endtime.strftime('%Y-%m-%d %H:%M:%S')))
+        logging.warning('Total time taken: {} seconds'.format((endtime-starttime).total_seconds()))
 
 
 if __name__ == "__main__":
