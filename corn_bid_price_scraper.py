@@ -16,8 +16,9 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import Select
 from selenium.webdriver.support.ui import WebDriverWait
 import bu_alerts
-import numpy as np
 
+sender_email = 'biourjapowerdata@biourja.com'
+sender_password = r'bY3mLSQ-\Q!9QmXJ'
 receiver_email = 'manish.gupta@biourja.com,devina.ligga@biourja.com,Adarsh.Bhandari@biourja.com'
 #path = 'Cornbids.xlsx'
 path=r"S:\IT Dev\Production_Environment\cron-bid-price-automation"
@@ -32,23 +33,19 @@ download_path = path + '\\download\\'
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 
-tablename='CORN_BID_PRICE_AUTOMATION'
-
-job_id=np.random.randint(1000000,9999999)
-
-'''# browser user_agent
+# browser user_agent
 headers = {'User-Agent': 'Mozilla/5.0'}
 DRIVER_PATH = r'S:\IT Dev\Production_Environment\cron-bid-price-automation\chromedriver.exe'
 options = Options()
 options.headless = True
-driver = webdriver.Chrome(options=options, executable_path=DRIVER_PATH)'''
+driver = webdriver.Chrome(options=options, executable_path=DRIVER_PATH)
 
 # browser user_agent
-headers = {'User-Agent': 'Mozilla/5.0'}
+'''headers = {'User-Agent': 'Mozilla/5.0'}
 DRIVER_PATH = r'S:\IT Dev\Production_Environment\cron-bid-price-automation\geckodriver.exe'
 profile = webdriver.FirefoxProfile()
 profile.set_preference("browser.download.dir", download_path)
-driver=webdriver.Firefox(executable_path=DRIVER_PATH, firefox_profile=profile)
+driver=webdriver.Firefox(executable_path=DRIVER_PATH, firefox_profile=profile)'''
 
 # month list used to check name of months on websites
 month_list = ['jan', 'feb', 'mar', 'apr', 'may', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dec']
@@ -1147,15 +1144,10 @@ def insert_into_sheet(row_number, bids):
         return False
 
 def main():
-    starttime=datetime.now()
-    logging.info('Execution Started')
     global bid_prices
     try:
         starttime=datetime.now()
         logging.warning('NYISO: Start work at {} ...'.format(starttime.strftime('%Y-%m-%d %H:%M:%S')))
-        logging.info('Start work at {} ...'.format(starttime.strftime('%Y-%m-%d %H:%M:%S')))
-        log_json='[{"JOB_ID": "'+str(job_id)+'","CURRENT_DATETIME": "'+str(datetime.now())+'"}]'
-        bu_alerts.bulog(process_name="CORN_BID_PRICE_AUTOMATION",database='POWERDB',status='Started',table_name=tablename, row_count=0, log=log_json, warehouse='ITPYTHON_WH',process_owner='MANISH GUPTA')
         logger.info("initializing new sheet...")
         excel_app = xw.App(visible=False)
         bid_prices = excel_app.books.open(r"S:\IT Dev\Production_Environment\cron-bid-price-automation\Cornbids.xlsx")
@@ -1189,27 +1181,18 @@ def main():
         scrape_and_insert_gpreinc()
         fetch_and_insert_fhr()
         fetch_and_insert_regular_websitedata()
-       
+        time.sleep(10)
         bid_prices.save()
-        log_json='[{"JOB_ID": "'+str(job_id)+'","CURRENT_DATETIME": "'+str(datetime.now())+'"}]'
-        bu_alerts.bulog(process_name="CORN_BID_PRICE_AUTOMATION",database='POWERDB',status='Completed',table_name=tablename, row_count=0, log=log_json, warehouse='ITPYTHON_WH',process_owner='MANISH GUPTA') 
-        logging.info('Execution Done')
-        bu_alerts.send_mail(
-            receiver_email = receiver_email,
-            mail_subject ='JOB SUCCESS - CORN_BID_PRICE_AUTOMATION',
-            mail_body = 'CORN_BID_PRICE_AUTOMATION completed successfully, Attached logs',
-            attachment_location = logfile
-        )
+        bu_alerts.send_mail(sender_email,sender_password,receiver_email,mail_subject='Corn-Basis Value - Job Success',mail_body='Hello, Process completed successfully.')
+    
     except Exception as ex:
-        logging.exception(f'Exception caught during execution: {e}')
-        log_json='[{"JOB_ID": "'+str(job_id)+'","CURRENT_DATETIME": "'+str(datetime.now())+'"}]'
-        bu_alerts.bulog(process_name="CORN_BID_PRICE_AUTOMATION",database='POWERDB',status='Failed',table_name= tablename, row_count=0, log=log_json, warehouse='ITPYTHON_WH',process_owner='MANISH GUPTA') 
-        bu_alerts.send_mail(
-            receiver_email = receiver_email,
-            mail_subject='JOB FAILED - CORN_BID_PRICE_AUTOMATION',
-            mail_body='CORN_BID_PRICE_AUTOMATION failed during execution, Attached logs',
-            attachment_location = log_file_location
-        )
+        print("error occoured in main",ex)
+        print(sys.exc_info()[0])
+        logger.info("error occoured in main",ex)
+        logger.info(sys.exc_info()[0])
+        bu_alerts.send_mail(sender_email,sender_password,receiver_email,mail_subject='Corn-Basis Value - Job Failure',mail_body='Hello, <br/><br/>Process Error: '+str(ex))
+
+
     finally:
         excel_app.quit()
         driver.close()
