@@ -1147,10 +1147,10 @@ def main():
     global bid_prices
     try:
         starttime=datetime.now()
-        logging.warning('NYISO: Start work at {} ...'.format(starttime.strftime('%Y-%m-%d %H:%M:%S')))
+        logging.warning('Start work at {} ...'.format(starttime.strftime('%Y-%m-%d %H:%M:%S')))
         logger.info("initializing new sheet...")
         excel_app = xw.App(visible=False)
-        bid_prices = excel_app.books.open(r"S:\IT Dev\Production_Environment\cron-bid-price-automation\Cornbids.xlsx")
+        bid_prices = excel_app.books.open(r"\\biourja.local\biourja\India Sync\India\Automated Reports\Corn Bid\Cornbids.xlsx")
         status = initialize_new_sheet(bid_prices)
         if status:
             print("new sheet created, starting the scraping process...")
@@ -1183,14 +1183,14 @@ def main():
         fetch_and_insert_regular_websitedata()
         time.sleep(10)
         bid_prices.save()
-        bu_alerts.send_mail(sender_email,sender_password,receiver_email,mail_subject='Corn-Basis Value - Job Success',mail_body='Hello, Process completed successfully.')
+        bu_alerts.send_mail(receiver_email = receiver_email,mail_subject ='SUCCESS - CORN BID PRICE AUTOMATION',mail_body = 'CORN BID PRICE AUTOMATION completed successfully, Attached logs', attachment_location = logfile)
     
     except Exception as ex:
         print("error occoured in main",ex)
         print(sys.exc_info()[0])
         logger.info("error occoured in main",ex)
         logger.info(sys.exc_info()[0])
-        bu_alerts.send_mail(sender_email,sender_password,receiver_email,mail_subject='Corn-Basis Value - Job Failure',mail_body='Hello, <br/><br/>Process Error: '+str(ex))
+        bu_alerts.send_mail(receiver_email = receiver_email,mail_subject ='FAILURE - CORN BID PRICE AUTOMATION',mail_body = 'CORN BID PRICE AUTOMATION failed, Attached logs', attachment_location = logfile)
 
 
     finally:
