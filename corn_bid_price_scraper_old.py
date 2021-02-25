@@ -17,8 +17,9 @@ from selenium.webdriver.support.ui import Select
 from selenium.webdriver.support.ui import WebDriverWait
 import bu_alerts
 
+sender_email = 'biourjapowerdata@biourja.com'
+sender_password = r'bY3mLSQ-\Q!9QmXJ'
 receiver_email = 'manish.gupta@biourja.com,devina.ligga@biourja.com,Adarsh.Bhandari@biourja.com'
-#receiver_email = 'manish.gupta@biourja.com'
 #path = 'Cornbids.xlsx'
 path=r"S:\IT Dev\Production_Environment\cron-bid-price-automation"
 
@@ -1144,52 +1145,11 @@ def insert_into_sheet(row_number, bids):
 
 def main():
     global bid_prices
-    
-    #initializing sheet for single index.
     try:
         starttime=datetime.now()
-        logging.warning('NYISO: Start work at {} ...'.format(starttime.strftime('%Y-%m-%d %H:%M:%S')))
+        logging.warning('Start work at {} ...'.format(starttime.strftime('%Y-%m-%d %H:%M:%S')))
         logger.info("initializing new sheet...")
         excel_app = xw.App(visible=False)
-        #bid_prices = excel_app.books.open(r"S:\IT Dev\Production_Environment\cron-bid-price-automation\Cornbids.xlsx")
-        bid_prices = excel_app.books.open(r"\\biourja.local\biourja\India Sync\India\Automated Reports\Corn Bid\Cornbids.xlsx")
-        status = initialize_new_sheet(bid_prices)
-        if status:
-            print("new sheet created, starting the scraping process...")
-            logger.info("new sheet created, starting the scraping process...")
-        else:
-            print("sheet already present, starting the scraping process...")
-            logger.info("sheet already, starting the scraping process...")
-
-        no_bids_row_numbers = ['H25', 'H48', 'H55', 'H110', 'H131', 'H186', 'H199']
-        for row_num in no_bids_row_numbers:
-            xw.Range(row_num).value = 'No Bids'
-        
-        bids = scrape_absenergy()
-        if insert_into_sheet(2, bids):
-            print("success for row 2")
-            logger.info("success for row 2")
-
-        bid_prices.save()
-        bid_prices.close()
-        excel_app.quit()
-        
-        
-    except Exception as ex:
-        print("error occoured in main",ex)
-        print(sys.exc_info()[0])
-        logger.info("error occoured in main",ex)
-        logger.info(sys.exc_info()[0])
-    
-    
-    #starting the complete process 
-    time.sleep(10)
-    try:
-        starttime=datetime.now()
-        logging.warning('NYISO: Start work at {} ...'.format(starttime.strftime('%Y-%m-%d %H:%M:%S')))
-        logger.info("initializing new sheet...")
-        excel_app = xw.App(visible=False)
-        #bid_prices = excel_app.books.open(r"S:\IT Dev\Production_Environment\cron-bid-price-automation\Cornbids.xlsx")
         bid_prices = excel_app.books.open(r"\\biourja.local\biourja\India Sync\India\Automated Reports\Corn Bid\Cornbids.xlsx")
         status = initialize_new_sheet(bid_prices)
         if status:
@@ -1223,13 +1183,16 @@ def main():
         fetch_and_insert_regular_websitedata()
         time.sleep(10)
         bid_prices.save()
-        bu_alerts.send_mail(receiver_email = receiver_email,mail_subject ='SUCCESS - CORN BID PRICE AUTOMATION',mail_body = 'CORN BID PRICE AUTOMATION completed successfully, Attached logs',attachment_location = logfile)    
+        bu_alerts.send_mail(receiver_email = receiver_email,mail_subject ='SUCCESS - CORN BID PRICE AUTOMATION',mail_body = 'CORN BID PRICE AUTOMATION completed successfully, Attached logs', attachment_location = logfile)
+    
     except Exception as ex:
         print("error occoured in main",ex)
         print(sys.exc_info()[0])
         logger.info("error occoured in main",ex)
         logger.info(sys.exc_info()[0])
-        bu_alerts.send_mail(receiver_email = receiver_email,mail_subject ='FAILURE - CORN BID PRICE AUTOMATION',mail_body = 'CORN BID PRICE AUTOMATION failed, Attached logs',attachment_location = logfile)
+        bu_alerts.send_mail(receiver_email = receiver_email,mail_subject ='FAILURE - CORN BID PRICE AUTOMATION',mail_body = 'CORN BID PRICE AUTOMATION failed, Attached logs', attachment_location = logfile)
+
+
     finally:
         excel_app.quit()
         driver.close()
