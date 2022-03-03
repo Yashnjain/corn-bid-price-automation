@@ -2,7 +2,7 @@ import logging
 import os
 import sys
 import time
-from datetime import datetime
+from datetime import datetime, timedelta
 import psutil
 # import pytesseract
 import glob
@@ -13,6 +13,8 @@ from bs4 import BeautifulSoup
 from dateutil.relativedelta import relativedelta
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
+# from selenium.webdriver.chrome.service import Service
+# from webdriver_manager.chrome import ChromeDriverManager
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import Select
@@ -24,7 +26,7 @@ job_id=np.random.randint(1000000,9999999)
 
 # receiver_email_1 = 'imam.khan@biourja.com'
 receiver_email = 'indiapowerit@biourja.com, DAPower@biourja.com'
-# receiver_email = 'imam.khan@biourja.com'
+receiver_email1 = 'imam.khan@biourja.com'
 #path = 'Cornbids.xlsx'
 path=r"S:\IT Dev\Production_Environment\corn-bid-price-automation"
 
@@ -41,13 +43,14 @@ logger.setLevel(logging.INFO)
 # browser user_agent
 #chrome as a driver
 headers = {'User-Agent': 'Mozilla/5.0'}
-DRIVER_PATH = r'S:\IT Dev\Production_Environment\corn-bid-price-automation\chromedriver.exe'
+# DRIVER_PATH = r'S:\IT Dev\Production_Environment\corn-bid-price-automation\chromedriver.exe'
+DRIVER_PATH = r'S:\IT Dev\Production_Environment\chromedriver\chromedriver.exe'
 # options = Options()
 # options.headless = True
 # driver = webdriver.Chrome(executable_path=DRIVER_PATH)
 chrome_options = webdriver.ChromeOptions()
-driver = webdriver.Chrome(executable_path=DRIVER_PATH, options=chrome_options)
-driver.maximize_window()
+chrome_options.headless = True
+
 # driver.get("https://www.google.com/")
 print("Done")
 month_to_basis={}
@@ -80,7 +83,8 @@ def initialize_new_sheet(bid_prices):
     try:
         latest_sheet = bid_prices.sheets.active
         # opening the latest tab to copy initial columns from it --
-        new_sheet_name = str(datetime.now().month) + '.' + str(datetime.now().day)
+        new_sheet_name = str(datetime.now().month) + '.' + str(datetime.now().day - 0) # change 0 to 1 for manual run
+        logger.info(f"new sheet name is {new_sheet_name}")
         sheet_names = [i.name for i in bid_prices.sheets]
         if new_sheet_name not in sheet_names:
             # copying the common columns to the newly created tab --
@@ -185,7 +189,7 @@ def scrape_midwestagenergy():
 
 
 # to scrape from a singular website
-def scrape_frvethanol():
+def scrape_frvethanol(driver):
     month_to_basis = dict()
     try:
         year = datetime.today().date().year
@@ -217,7 +221,7 @@ def scrape_frvethanol():
 
 
 # to scrape from a singular website, but different locations
-def scrape_fhr(url):
+def scrape_fhr(driver, url):
     month_to_basis = dict()
     try:
         driver.get(url)
@@ -265,17 +269,18 @@ def scrape_fhr(url):
 
 
 # calls the fhr_scrape function and then insert_to_sheet function
-def fetch_and_insert_fhr():
+def fetch_and_insert_fhr(driver):
     try:
         fhr_urls = {"https://www.fhr.com/corn-prices/arthur": 54, "https://www.fhr.com/corn-prices/fairbank": 56,
                     "https://www.fhr.com/corn-prices/Fairmont": 57, "https://www.fhr.com/corn-prices/iowa-falls": 58,
                     "https://www.fhr.com/corn-prices/Menlo": 59, "https://www.fhr.com/corn-prices/shell-rock": 60}
 
         for url in fhr_urls:
-            bids = scrape_fhr(url)
+            bids = scrape_fhr(driver, url)
             if insert_into_sheet(fhr_urls[url], bids):
                 print("success for row " + str(fhr_urls[url]))
                 logger.info("success for row " + str(fhr_urls[url]))
+                logger.info(f"inserted bids are: {bids}")
         return True
     except Exception as e:
         print(sys.exc_info()[0])
@@ -286,7 +291,7 @@ def fetch_and_insert_fhr():
 
 
 # for singular website but different locations, scrapes and inserts one by one
-def scrape_and_insert_gpreinc():
+def scrape_and_insert_gpreinc(driver):
     try:
         logger.info("Starting gprenic")
         driver.get("http://www.gpreinc.com/corn-bids")
@@ -315,6 +320,7 @@ def scrape_and_insert_gpreinc():
             if insert_into_sheet(city_select_values[city], month_to_basis):
                 print("success for row " + str(city_select_values[city]))
                 logger.info("success for row " + str(city_select_values[city]))
+                logger.info(f"inserted bids are: {month_to_basis}")
             del month_to_basis
         return True
     except Exception as e:
@@ -326,7 +332,7 @@ def scrape_and_insert_gpreinc():
 
 
 # to scrape from a singular website
-def poet_biorefining2(url, basis_index):
+def poet_biorefining2(driver, url, basis_index):
     month_to_basis = dict()
     try:
         year = datetime.now().date().year
@@ -368,7 +374,7 @@ def poet_biorefining2(url, basis_index):
 
 
 # to scrape from a singular website
-def scrape_admfarm(url):
+def scrape_admfarm(driver, url):
     month_to_basis = dict()
     try:
         driver.get(url)
@@ -413,7 +419,7 @@ def scrape_admfarm(url):
 
 
 # function to scrape from a type of webiste where month occours in the header
-def scrape_regular_website_1(url, basis_index, iframe_xpath=""):
+def scrape_regular_website_1(driver, url, basis_index, iframe_xpath=""):
     month_to_basis = dict()
     try:
         year = datetime.now().date().year
@@ -457,7 +463,7 @@ def scrape_regular_website_1(url, basis_index, iframe_xpath=""):
         logger.info(sys.exc_info()[0])
         logger.info(f"error occoured with website: {url}, {e}")
         return month_to_basis
-def scrape_eliteoctane(url):
+def scrape_eliteoctane(driver, url):
     month_to_basis = dict()
     try:
         driver.get(url)
@@ -496,7 +502,7 @@ def scrape_eliteoctane(url):
         logger.info(sys.exc_info()[0])
         logger.info(f"error occoured with website: {url}, {e}")
         return month_to_basis
-def scrape_ggcorn(url):
+def scrape_ggcorn(driver, url):
     month_to_basis = {}
     try:
         # time.sleep(10)
@@ -524,7 +530,7 @@ def scrape_ggcorn(url):
         logger.info(sys.exc_info()[0])
         logger.info(f"error occoured with website: {url}, {e}")
         return month_to_basis
-def scrape_cvec(url):
+def scrape_cvec(driver, url):
     month_to_basis = {}
     try:
         # time.sleep(10)
@@ -608,7 +614,7 @@ def delete_all_files(folder_path:str):
 
 
 # the function which is used for most of the types of webistes, handles multiple cases
-def scrape_regular_website_2(url, find_by_option, basis_index, month_index=0, table_name='cashbids-data-table',
+def scrape_regular_website_2(driver, url, find_by_option, basis_index, month_index=0, table_name='cashbids-data-table',
                              wait_by_option=0, time_flag=0,
                              xpath_for_table="", class_name='DataGrid DataGridPlus', row_start_index=1, table_index=0,
                              table_id='', iframe_xpath="", row_end_index=8):
@@ -723,263 +729,302 @@ def scrape_regular_website_2(url, find_by_option, basis_index, month_index=0, ta
 
 
 # calls the scrape functions for regular type 1 and 2 and then inserts to sheet
-def fetch_and_insert_regular_websitedata():
+def fetch_and_insert_regular_websitedata(driver):
     try:
         # websites using regular scrape 1 method --
-        bids = scrape_regular_website_1(url="http://www.glaciallakesenergy.com/corn_mina.htm", basis_index=2,
+        bids = scrape_regular_website_1(driver, url="http://www.glaciallakesenergy.com/corn_mina.htm", basis_index=2,
                                         iframe_xpath="/html/body/div[2]/table[5]/tbody/tr/td[2]/iframe")
         if insert_into_sheet(65, bids):
             print("success for row 65")
             logger.info("success for row 65")
+            logger.info(f"inserted bids are: {bids}")
 
-        bids = scrape_regular_website_1(url="http://www.glaciallakesenergy.com/corn_mina.htm", basis_index=7,
+        bids = scrape_regular_website_1(driver, url="http://www.glaciallakesenergy.com/corn_mina.htm", basis_index=7,
                                         iframe_xpath="/html/body/div[2]/table[5]/tbody/tr/td[2]/iframe")
         if insert_into_sheet(67, bids):
             print("success for row 67")
             logger.info("success for row 67")
+            logger.info(f"inserted bids are: {bids}")
 
-        bids = scrape_regular_website_1(url="http://dtn.pagrain.com/index.cfm", basis_index=-2)
+        bids = scrape_regular_website_1(driver, url="http://dtn.pagrain.com/index.cfm", basis_index=-2)
         if insert_into_sheet(128, bids):
             print("success for row 128")
             logger.info("success for row 128")
+            logger.info(f"inserted bids are: {bids}")
 
-        bids = scrape_regular_website_1(url="http://corn.eenergyadams.com/index.cfm?show=11&mid=6", basis_index=0)
+        bids = scrape_regular_website_1(driver, url="http://corn.eenergyadams.com/index.cfm?show=11&mid=6", basis_index=0)
         if insert_into_sheet(49, bids):
             print("success for row 49")
             logger.info("success for row 49")
+            logger.info(f"inserted bids are: {bids}")
 
-        bids = scrape_regular_website_1(url="http://www.heronlakebioenergy.com/index.cfm?show=11&mid=8", basis_index=2)
+        bids = scrape_regular_website_1(driver, url="http://www.heronlakebioenergy.com/index.cfm?show=11&mid=8", basis_index=2)
         if insert_into_sheet(90, bids):
             print("success for row 90")
             logger.info("success for row 90")
+            logger.info(f"inserted bids are: {bids}")
 
-        bids = scrape_regular_website_1(url="http://www.highwaterethanol.com/index.cfm?show=11&mid=36", basis_index=1)
+        bids = scrape_regular_website_1(driver, url="http://www.highwaterethanol.com/index.cfm?show=11&mid=36", basis_index=1)
         if insert_into_sheet(91, bids):
             print("success for row 91")
             logger.info("success for row 91")
+            logger.info(f"inserted bids are: {bids}")
 
-        bids = scrape_regular_website_1(url="http://dtn.nebraskacornprocessing.com/index.cfm", basis_index=2)
+        bids = scrape_regular_website_1(driver, url="http://dtn.nebraskacornprocessing.com/index.cfm", basis_index=2)
         if insert_into_sheet(113, bids):
             print("success for row 113")
             logger.info("success for row 113")
+            logger.info(f"inserted bids are: {bids}")
 
         # websites using regular scrape 2 method --
-        bids = scrape_regular_website_2(url="http://tallcornethanol.aghost.net/index.cfm?show=11&mid=3", wait_by_option=2,
+        bids = scrape_regular_website_2(driver, url="http://tallcornethanol.aghost.net/index.cfm?show=11&mid=3", wait_by_option=2,
                                         basis_index=-1,
                                         month_index=0, find_by_option=1)
         if insert_into_sheet(139, bids):
             print("success for row 139")
             logger.info("success for row 139")
+            logger.info(f"inserted bids are: {bids}")
 
-        bids = scrape_regular_website_2(url="https://auroracoop.com/markets/", wait_by_option=3, find_by_option=3,
+        bids = scrape_regular_website_2(driver, url="https://auroracoop.com/markets/", wait_by_option=3, find_by_option=3,
                                         class_name='section', month_index=0, basis_index=2, table_index=5, row_end_index=7)
         if insert_into_sheet(122, bids):
             insert_into_sheet(125, bids)
             print("success for row 122 and 125")
             logger.info("success for row 122 and 125")
+            logger.info(f"inserted bids are: {bids}")
             time.sleep(10)
 
-        bids = scrape_regular_website_2(url="https://www.hankinsonre.com/janesville", wait_by_option=1, basis_index=4,
+        bids = scrape_regular_website_2(driver, url="https://www.hankinsonre.com/janesville", wait_by_option=1, basis_index=4,
                                         month_index=0, find_by_option=1, class_name="cashbid_table",
                                         row_start_index=1,
                                         xpath_for_table="/html/body/div[1]/div[2]/div[2]/div/div[3]/div[1]/div[2]/div[2]/div/table")
         if insert_into_sheet(86, bids):                  
             print("success for row 86")
-            logger.info("success for row 86")     
+            logger.info("success for row 86")
+            logger.info(f"inserted bids are: {bids}")
 
-        bids = scrape_regular_website_2(url="http://www.huskerag.com", wait_by_option=1, basis_index=4, month_index=1,
+        bids = scrape_regular_website_2(driver, url="http://www.huskerag.com", wait_by_option=1, basis_index=4, month_index=1,
                                         find_by_option=3, table_index=9,
                                         xpath_for_table="/html/body/table/tbody/tr[2]/td[2]/table/tbody/tr[3]/td[1]/div/table[4]/tbody/tr[3]/td[2]/table")
         if insert_into_sheet(93, bids):
             print("success for row 93")
             logger.info("success for row 93")
+            logger.info(f"inserted bids are: {bids}")
 
-        bids = scrape_regular_website_2(url="http://www.ibecethanol.com/index.cfm?show=11", wait_by_option=3, basis_index=4,
+        bids = scrape_regular_website_2(driver, url="http://www.ibecethanol.com/index.cfm?show=11", wait_by_option=3, basis_index=4,
                                         month_index=3, find_by_option=1, class_name="DataGrid", row_start_index=2)
         if insert_into_sheet(96, bids):
             print("success for row 96")
             logger.info("success for row 96")
+            logger.info(f"inserted bids are: {bids}")
             time.sleep(10)
 
-        bids = scrape_regular_website_2(url="https://kaapaethanolcommodities.com/Commodities/Cash-Bids", basis_index=5,
+        bids = scrape_regular_website_2(driver, url="https://kaapaethanolcommodities.com/Commodities/Cash-Bids", basis_index=5,
                                         month_index=1, find_by_option=1, row_start_index=2, table_index=2,
                                         class_name="cashbid_table cashbid_fulltable", row_end_index=8)
         if insert_into_sheet(97, bids):
             print("success for row 97")
             logger.info("success for row 97")
+            logger.info(f"inserted bids are: {bids}")
     
 
-        bids = scrape_regular_website_2(url="http://www.granitefallsenergy.com/index.cfm?show=11&mid=41", wait_by_option=2,
+        bids = scrape_regular_website_2(driver, url="http://www.granitefallsenergy.com/index.cfm?show=11&mid=41", wait_by_option=2,
                                         find_by_option=1, basis_index=2, class_name="DataGrid DataGridPlus DataNormal")
         if insert_into_sheet(72, bids):
             print("success for row 72")
             logger.info("success for row 72")
+            logger.info(f"inserted bids are: {bids}")
 
         # bids = scrape_regular_website_2(url="https://www.ggecorn.com/bids", wait_by_option=4, table_id="dpTable1",
         #                                 find_by_option=3, basis_index=3)
-        bids = scrape_ggcorn("https://www.ggecorn.com/bids")
+        bids = scrape_ggcorn(driver, "https://www.ggecorn.com/bids")
         if insert_into_sheet(68, bids):
             print("success for row 68")
             logger.info("success for row 68")
+            logger.info(f"inserted bids are: {bids}")
 
-        bids = scrape_regular_website_2(url="http://www.oneearthenergy.com", wait_by_option=3, month_index=1,
+        bids = scrape_regular_website_2(driver, url="http://www.oneearthenergy.com", wait_by_option=3, month_index=1,
                                         find_by_option=1, basis_index=3, class_name="cb_table")
         if insert_into_sheet(116, bids):
             print("success for row 116")
             logger.info("success for row 116")
+            logger.info(f"inserted bids are: {bids}")
 
-        bids = scrape_regular_website_2(url="http://www.ldnorfolk.com/index.cfm?show=11&mid=4", wait_by_option=2,
+        bids = scrape_regular_website_2(driver, url="http://www.ldnorfolk.com/index.cfm?show=11&mid=4", wait_by_option=2,
                                         find_by_option=1, basis_index=2)
         if insert_into_sheet(104, bids):
             print("success for row 104")
             logger.info("success for row 104")
+            logger.info(f"inserted bids are: {bids}")
         
         logger.info("Scaraping kapa 3rd table index")
-        bids = scrape_regular_website_2(url="https://kaapaethanolcommodities.com/Commodities/Cash-Bids", basis_index=5,
+        bids = scrape_regular_website_2(driver, url="https://kaapaethanolcommodities.com/Commodities/Cash-Bids", basis_index=5,
                                         month_index=1, find_by_option=1, row_start_index=2, table_index=3, wait_by_option=1,
                                         class_name="cashbid_table cashbid_fulltable", row_end_index=8, xpath_for_table="/html/body/form/div[4]/div[2]/div/div[4]/div/div[1]/div[2]/div/table[3]/thead/tr[1]/td")
         if insert_into_sheet(98, bids):
             print("success for row 98")
             logger.info("success for row 98")
+            logger.info(f"inserted bids are: {bids}")
 
-        bids = scrape_regular_website_2(url="https://www.ldc.com/us/en/our-facilities/grand-junction-ia/cash-bids/",
+        bids = scrape_regular_website_2(driver, url="https://www.ldc.com/us/en/our-facilities/grand-junction-ia/cash-bids/",
                                         wait_by_option=1, find_by_option=3, basis_index=2, table_index=0,
                                         xpath_for_table="//*[@id=\"ldc-root\"]/article/div[1]/div/div[2]/div[2]"
                                                         "/section/div/div/div/div/div/table", row_end_index=11)
         if insert_into_sheet(103, bids):
             print("success for row 103")
             logger.info("success for row 103")
+            logger.info(f"inserted bids are: {bids}")
 
-        bids = scrape_regular_website_2(url="https://www.littlesiouxcornprocessors.com", wait_by_option=4,
+        bids = scrape_regular_website_2(driver, url="https://www.littlesiouxcornprocessors.com", wait_by_option=4,
                                         find_by_option=4, basis_index=3, month_index=1, table_id="dpTable1", row_start_index=2, row_end_index=8)
         if insert_into_sheet(102, bids):
             print("success for row 102")
             logger.info("success for row 102")
+            logger.info(f"inserted bids are: {bids}")
 
-        bids = scrape_regular_website_2(url="https://www.lincolnwayenergy.com/corn1.php", wait_by_option=2,
+        bids = scrape_regular_website_2(driver, url="https://www.lincolnwayenergy.com/corn1.php", wait_by_option=2,
                                         find_by_option=1, basis_index=-1,
                                         iframe_xpath="/html/body/table[2]/tbody/tr/td[2]/table[2]/tbody/tr/td[1]/iframe", row_end_index=8)
         if insert_into_sheet(101, bids):
             print("success for row 101")
             logger.info("success for row 101")
+            logger.info(f"inserted bids are: {bids}")
 
-        bids = scrape_regular_website_2(url="https://www.lincolnlandagrienergy.com/pages/custom.php?id=5427", wait_by_option=3,
+        bids = scrape_regular_website_2(driver, url="https://www.lincolnlandagrienergy.com/pages/custom.php?id=5427", wait_by_option=3,
                                         find_by_option=1, basis_index=3, month_index=1, class_name="homepage_quoteboard",
                                         row_start_index=2)
         if insert_into_sheet(100, bids):
             print("success for row 100")
             logger.info("success for row 100")
+            logger.info(f"inserted bids are: {bids}")
 
-        bids = scrape_regular_website_2(url="https://www.hankinsonre.com/hankinson", wait_by_option=1, basis_index=4,
+        bids = scrape_regular_website_2(driver, url="https://www.hankinsonre.com/hankinson", wait_by_option=1, basis_index=4,
                                             month_index=0, find_by_option=1, class_name="cashbid_table",
                                             row_start_index=1, row_end_index=8,
                                             xpath_for_table="/html/body/div[1]/div[2]/div[2]/div/div[2]/div[1]/div[2]/div[2]/div[1]/table")
         if insert_into_sheet(87, bids):
             print("success for row 87")
             logger.info("success for row 87")
+            logger.info(f"inserted bids are: {bids}")
 
-        bids = scrape_regular_website_2(url="http://www.sireethanol.com/index.cfm?show=11&mid=8", wait_by_option=2,
+        bids = scrape_regular_website_2(driver, url="http://www.sireethanol.com/index.cfm?show=11&mid=8", wait_by_option=2,
                                         find_by_option=1, basis_index=-1)
         if insert_into_sheet(175, bids):
             print("success for row 175")
             logger.info("success for row 175")
+            logger.info(f"inserted bids are: {bids}")
 
-        bids = scrape_regular_website_2(url="http://www.southbendethanol.com/index.cfm?show=11&mid=3", wait_by_option=2,
+        bids = scrape_regular_website_2(driver, url="http://www.southbendethanol.com/index.cfm?show=11&mid=3", wait_by_option=2,
                                         find_by_option=1, basis_index=-2)
         if insert_into_sheet(174, bids):
             print("success for row 174")
             logger.info("success for row 174")
+            logger.info(f"inserted bids are: {bids}")
 
-        bids = scrape_regular_website_2(url="https://siouxlandethanol.com/cash-bids/", wait_by_option=1, find_by_option=1,
+        bids = scrape_regular_website_2(driver, url="https://siouxlandethanol.com/cash-bids/", wait_by_option=1, find_by_option=1,
                                         basis_index=-2, xpath_for_table="/html/body/div[3]/div[1]/div/div/div/table",class_name="cashbid_table cashbid_fulltable",
                                         row_start_index=2)
         if insert_into_sheet(173, bids):
             print("success for row 173")
             logger.info("success for row 173")
+            logger.info(f"inserted bids are: {bids}")
 
-        bids = scrape_regular_website_2(url="https://www.quad-county.com/markets/cash.php", wait_by_option=1, table_id="dpTable1",
+        bids = scrape_regular_website_2(driver, url="https://www.quad-county.com/markets/cash.php", wait_by_option=1, table_id="dpTable1",
                                         find_by_option=4, basis_index=-3, month_index=1,
                                         xpath_for_table="//*[@id=\"dpTable1\"]")
         if insert_into_sheet(163, bids):
             print("success for row 163")
             logger.info("success for row 163")
+            logger.info(f"inserted bids are: {bids}")
 
-        bids = scrape_regular_website_2(url="http://www.redriverenergy.com/index.php", wait_by_option=3,
+        bids = scrape_regular_website_2(driver, url="http://www.redriverenergy.com/index.php", wait_by_option=3,
                                         find_by_option=1, basis_index=3, month_index=1, class_name="tbl")
         if insert_into_sheet(165, bids):
             print("success for row 165")
             logger.info("success for row 165")
+            logger.info(f"inserted bids are: {bids}")
 
-        bids = scrape_regular_website_2(url="https://www.midmissourienergy.com/markets/cash.php", wait_by_option=4,
+        bids = scrape_regular_website_2(driver, url="https://www.midmissourienergy.com/markets/cash.php", wait_by_option=4,
                                         find_by_option=4, basis_index=-3, month_index=1, table_id='dpTable1', row_end_index=13)
         if insert_into_sheet(111, bids):
             print("success for row 111")
             logger.info("success for row 111")
+            logger.info(f"inserted bids are: {bids}")
 
-        bids = scrape_regular_website_2(url="https://www.andersonsgrain.com/locations/in/clymers/", wait_by_option=3,
+        bids = scrape_regular_website_2(driver, url="https://www.andersonsgrain.com/locations/in/clymers/", wait_by_option=3,
                                         find_by_option=1, basis_index=2, table_name='styled-table', class_name='styled-table')
         if insert_into_sheet(183, bids):
             print("success for row 183")
             logger.info("success for row 183")
+            logger.info(f"inserted bids are: {bids}")
 
-        bids = scrape_regular_website_2(url="https://www.andersonsgrain.com/locations/oh/greenville/", wait_by_option=3,
+        bids = scrape_regular_website_2(driver, url="https://www.andersonsgrain.com/locations/oh/greenville/", wait_by_option=3,
                                         find_by_option=1, basis_index=2, table_name='styled-table', class_name='styled-table')
         if insert_into_sheet(185, bids):
             print("success for row 185")
             logger.info("success for row 185")
+            logger.info(f"inserted bids are: {bids}")
 
-        bids = scrape_regular_website_2(url="https://www.andersonsgrain.com/locations/ia/denison/", wait_by_option=3,
+        bids = scrape_regular_website_2(driver, url="https://www.andersonsgrain.com/locations/ia/denison/", wait_by_option=3,
                                         find_by_option=1, basis_index=2, table_name='styled-table', class_name='styled-table')
         if insert_into_sheet(184, bids):
             print("success for row 184")
             logger.info("success for row 184")
+            logger.info(f"inserted bids are: {bids}")
 
-        bids = scrape_regular_website_2(url="https://www.andersonsgrain.com/locations/mi/albion/", wait_by_option=3,
+        bids = scrape_regular_website_2(driver, url="https://www.andersonsgrain.com/locations/mi/albion/", wait_by_option=3,
                                         find_by_option=1, basis_index=2, table_name='styled-table', class_name='styled-table')
         if insert_into_sheet(182, bids):
             print("success for row 182")
             logger.info("success for row 182")
+            logger.info(f"inserted bids are: {bids}")
             time.sleep(10)
 
-        bids = scrape_regular_website_2(url="https://goldentriangleenergy.com/corn/", row_start_index=2,row_end_index=8,
+        bids = scrape_regular_website_2(driver, url="https://goldentriangleenergy.com/corn/", row_start_index=2,row_end_index=8,
                                     find_by_option=1, month_index=1, basis_index=4, class_name='homepage_quoteboard',
                                     wait_by_option=3,iframe_xpath="/html/body/div[1]/div[2]/main/div/section/div/div/div[2]/div/div/div/iframe")
         if insert_into_sheet(69, bids):
             print("success for row 69")
             logger.info("success for row 69")
+            logger.info(f"inserted bids are: {bids}")
 
-        bids = scrape_regular_website_2(url="https://www.pacificethanol.com/pekin-il-corn", row_start_index=3,
+        bids = scrape_regular_website_2(driver, url="https://www.pacificethanol.com/pekin-il-corn", row_start_index=3,
                                         find_by_option=3, basis_index=2, row_end_index=9)
         if insert_into_sheet(121, bids):
             insert_into_sheet(123, bids)
             insert_into_sheet(124, bids)
             print("success for row 121, 123, 124")
             logger.info("success for row 121, 123, 124")
+            logger.info(f"inserted bids are: {bids}")
 
-        bids = scrape_regular_website_2(url="https://www.nugenmarion.com", row_start_index=2, table_id='dpTable1',
+        bids = scrape_regular_website_2(driver, url="https://www.nugenmarion.com", row_start_index=2, table_id='dpTable1',
                                         wait_by_option=4, find_by_option=4, basis_index=4, month_index=1, row_end_index=8)
         if insert_into_sheet(115, bids):
             print("success for row 115")
             logger.info("success for row 115")
+            logger.info(f"inserted bids are: {bids}")
 
-        bids = scrape_regular_website_2(url="http://www.cmgtharaldsonethanol.com/index.cfm?show=11&mid=5", row_start_index=1,
+        bids = scrape_regular_website_2(driver, url="http://www.cmgtharaldsonethanol.com/index.cfm?show=11&mid=5", row_start_index=1,
                                         wait_by_option=2, find_by_option=1, basis_index=4)
         if insert_into_sheet(181, bids):
             print("success for row 181")
             logger.info("success for row 181")
+            logger.info(f"inserted bids are: {bids}")
 
-        bids = scrape_regular_website_2(url="https://www.unitedethanol.com/markets/cash.php?location_filter=18298",
+        bids = scrape_regular_website_2(driver, url="https://www.unitedethanol.com/markets/cash.php?location_filter=18298",
                                         wait_by_option=3, find_by_option=1, basis_index=6, row_start_index=2, month_index=1,
                                         class_name="homepage_quoteboard")
         if insert_into_sheet(189, bids):
             print("success for row 189")
             logger.info("success for row 189")
+            logger.info(f"inserted bids are: {bids}")
 
-        bids = scrape_regular_website_2(url="https://www.uwgp.com/grain/cash-bids-futures/", wait_by_option=4,
+        bids = scrape_regular_website_2(driver, url="https://www.uwgp.com/grain/cash-bids-futures/", wait_by_option=4,
                                         find_by_option=4, basis_index=3, row_start_index=2, table_id='cashbids-data-table')
         if insert_into_sheet(190, bids):
             print("success for row 190")
             logger.info("success for row 190")
+            logger.info(f"inserted bids are: {bids}")
 
 
         valero_urls = {"https://valero-aurora.aghostportal.com/index.cfm?show=11&mid=3": 193,
@@ -991,7 +1036,7 @@ def fetch_and_insert_regular_websitedata():
                     "https://valero-mtvernon.aghostportal.com/index.cfm?show=11&mid=3": 204}
 
         for url in valero_urls:
-            bids = scrape_regular_website_2(url=url, wait_by_option=2, find_by_option=1, basis_index=2)
+            bids = scrape_regular_website_2(driver, url=url, wait_by_option=2, find_by_option=1, basis_index=2)
             if insert_into_sheet(valero_urls[url], bids):
                 print("success for row " + str(valero_urls[url]))
                 logger.info("success for row " + str(valero_urls[url]))
@@ -1000,68 +1045,78 @@ def fetch_and_insert_regular_websitedata():
                     insert_into_sheet(201, bids)
                     print("success for row 201")
                     logger.info("success for row 201")
+                    logger.info(f"inserted bids are: {bids}")
 
-        bids=scrape_regular_website_2(url="https://valero-fortdodge.aghostportal.com/index.cfm?show=11&mid=3",wait_by_option=2,find_by_option=1,basis_index=1,
+        bids=scrape_regular_website_2(driver, url="https://valero-fortdodge.aghostportal.com/index.cfm?show=11&mid=3",wait_by_option=2,find_by_option=1,basis_index=1,
                                     row_start_index=1, class_name="DataGrid DataGridPlus")
         if insert_into_sheet(197,bids):
             print("success for row 197")
             logger.info("success for row 197")
+            logger.info(f"inserted bids are: {bids}")
 
-        bids=scrape_regular_website_2(url="https://valero-charlescity.aghostportal.com/index.cfm?show=11&mid=3",wait_by_option=2,find_by_option=1,basis_index=2,
+        bids=scrape_regular_website_2(driver, url="https://valero-charlescity.aghostportal.com/index.cfm?show=11&mid=3",wait_by_option=2,find_by_option=1,basis_index=2,
                                     row_start_index=1, class_name="DataGrid DataGridPlus")
         if insert_into_sheet(196,bids):
             print("success for row 196")
             logger.info("success for row 196")
+            logger.info(f"inserted bids are: {bids}")
 
-        bids = scrape_regular_website_2(url="https://www.hankinsonre.com/lima", wait_by_option=1, basis_index=3,
+        bids = scrape_regular_website_2(driver, url="https://www.hankinsonre.com/lima", wait_by_option=1, basis_index=3,
                                             month_index=1, row_end_index=8,
                                             find_by_option=1, class_name="cashbid_table", row_start_index=2,
                                             xpath_for_table="/html/body/div[1]/div[2]/div[2]/div/div[4]/div[1]/div[1]/div[2]/div[1]/table")
         if insert_into_sheet(88, bids):
                 print("success for row 88")
                 logger.info("success for row 88")
+                logger.info(f"inserted bids are: {bids}")
                 
         
-        bids = poet_biorefining2("http://poetbiorefining-cloverdale.aghost.net/index.cfm?show=11&mid=27", 4)
+        bids = poet_biorefining2(driver, "http://poetbiorefining-cloverdale.aghost.net/index.cfm?show=11&mid=27", 4)
         if insert_into_sheet(138, bids):
             print("success for row 138")
             logger.info("success for row 138")
+            logger.info(f"inserted bids are: {bids}")
 
         time.sleep(5)
-        bids = poet_biorefining2("http://shb.poetgrain.com/index.cfm?show=11&mid=3&theLocation=1&layout=1047", 3)
+        bids = poet_biorefining2(driver, "http://shb.poetgrain.com/index.cfm?show=11&mid=3&theLocation=1&layout=1047", 3)
         if insert_into_sheet(158, bids):
             print("success for row 158")
             logger.info("success for row 158")
+            logger.info(f"inserted bids are: {bids}")
 
 
-        bids = poet_biorefining2("http://poetbiorefining-portland.aghost.net/index.cfm?show=11&mid=3", 3)
+        bids = poet_biorefining2(driver, "http://poetbiorefining-portland.aghost.net/index.cfm?show=11&mid=3", 3)
         if insert_into_sheet(156, bids):
             print("success for row 156")
             logger.info("success for row 156")
+            logger.info(f"inserted bids are: {bids}")
 
-        bids = scrape_admfarm("https://www.admfarmview.com/cash-bids/bids/marshall")
+        bids = scrape_admfarm(driver, "https://www.admfarmview.com/cash-bids/bids/marshall")
         if insert_into_sheet(11, bids):
             print("success for row 11")
             logger.info("success for row 11")
             time.sleep(15)
             
         
-        bids = scrape_admfarm("https://www.admfarmview.com/cash-bids/bids/cedarrapids")
+        bids = scrape_admfarm(driver, "https://www.admfarmview.com/cash-bids/bids/cedarrapids")
         if insert_into_sheet(12, bids):
             print("success for row 12")
             logger.info("success for row 12")
+            logger.info(f"inserted bids are: {bids}")
 
         time.sleep(10)
-        bids = scrape_admfarm("https://www.admfarmview.com/cash-bids/bids/columbuscorn")
+        bids = scrape_admfarm(driver, "https://www.admfarmview.com/cash-bids/bids/columbuscorn")
         if insert_into_sheet(13, bids):
             print("success for row 13")
             logger.info("success for row 13")
+            logger.info(f"inserted bids are: {bids}")
 
         time.sleep(5)
-        bids = scrape_admfarm("https://www.admfarmview.com/cash-bids/bids/columbuscorn")
+        bids = scrape_admfarm(driver, "https://www.admfarmview.com/cash-bids/bids/columbuscorn")
         if insert_into_sheet(15, bids):
             print("success for row 15")
             logger.info("success for row 15")
+            logger.info(f"inserted bids are: {bids}")
 
         poetbiorefining_urls = {"https://poetbiorefining-alexandria.aghost.net/index.cfm?show=11&mid=3": [-1, 132],
                                 "http://poetbiorefining-binghamlake.aghost.net/index.cfm?show=11&mid=3": [-1, 135],
@@ -1086,119 +1141,136 @@ def fetch_and_insert_regular_websitedata():
                                 "https://poetbiorefining-macon.aghost.net/index.cfm?show=11&mid=3": [2, 152] }
                             
         for url in poetbiorefining_urls:
-            bids = scrape_regular_website_2(url=url, wait_by_option=2, find_by_option=1, basis_index=poetbiorefining_urls[url][0])
+            bids = scrape_regular_website_2(driver, url=url, wait_by_option=2, find_by_option=1, basis_index=poetbiorefining_urls[url][0])
             if insert_into_sheet(poetbiorefining_urls[url][1], bids):
                 print("success for row " + str(poetbiorefining_urls[url][1]))
                 logger.info("success for row " + str(poetbiorefining_urls[url][1]))
+                logger.info(f"inserted bids are: {bids}")
         
         time.sleep(5)       
-        bids = scrape_regular_website_2(url="http://poetbiorefining-northmanchester.aghost.net/index.cfm?show=11&mid=3",
+        bids = scrape_regular_website_2(driver, url="http://poetbiorefining-northmanchester.aghost.net/index.cfm?show=11&mid=3",
                                         month_index=3, basis_index=5, class_name='DataGrid', row_start_index=2, wait_by_option=1,row_end_index=7,
                                         find_by_option=1, xpath_for_table="/html/body/table/tbody/tr[2]/td[2]/table/tbody/tr/td/table[3]/tbody/tr[2]/td/table[2]/tbody")
         if insert_into_sheet(155, bids):
             print("success for row 155")
             logger.info("success for row 155")
+            logger.info(f"inserted bids are: {bids}")
 
     
 
-        bids = scrape_regular_website_2(url="http://poetbiorefining-ashton.aghost.net/index.cfm?show=11&mid=3",
+        bids = scrape_regular_website_2(driver, url="http://poetbiorefining-ashton.aghost.net/index.cfm?show=11&mid=3",
                                         month_index=0, basis_index=3, class_name='DataGrid DataGridPlus', row_start_index=1,wait_by_option=2,
                                         find_by_option=1)
         if insert_into_sheet(133, bids):
             print("success for row 133")
             logger.info("success for row 133")
+            logger.info(f"inserted bids are: {bids}")
 
-        bids = scrape_regular_website_2(url="http://poetbiorefining-bigstone.aghost.net/index.cfm?show=11&mid=5&ts=527357",
+        bids = scrape_regular_website_2(driver, url="http://poetbiorefining-bigstone.aghost.net/index.cfm?show=11&mid=5&ts=527357",
                                         month_index=0, basis_index=4, class_name='DataGrid DataGridPlus', row_start_index=1,wait_by_option=2,
                                         find_by_option=1)
         if insert_into_sheet(134, bids):
             print("success for row 134")
             logger.info("success for row 134")
+            logger.info(f"inserted bids are: {bids}")
 
-        bids = scrape_regular_website_2(url="https://www.wnyenergy.com/corn-bids/", class_name='cornbids',
+        bids = scrape_regular_website_2(driver, url="https://www.wnyenergy.com/corn-bids/", class_name='cornbids',
                                         basis_index=3, wait_by_option=3, find_by_option=1)
         if insert_into_sheet(206, bids):
             print("success for row 206")
             logger.info("success for row 206")
+            logger.info(f"inserted bids are: {bids}")
 
-        bids = scrape_regular_website_2(url="https://ekaellc.com/grain2/", month_index=2, basis_index=4,
+        bids = scrape_regular_website_2(driver, url="https://ekaellc.com/grain2/", month_index=2, basis_index=4,
                                         class_name='homepage_quoteboard', find_by_option=1,
                                         iframe_xpath="/html/body/div[1]/div[2]/div[2]/div/main/article/p/iframe")
         if insert_into_sheet(50, bids):
             print("success for row 50")
             logger.info("success for row 50")
+            logger.info(f"inserted bids are: {bids}")
 
-        bids = scrape_regular_website_2(url="http://www.dencollc.com",basis_index=4, find_by_option=1, xpath_for_table="/html/body/div[1]/div[2]/div[2]/div[1]/table/tbody/tr[1]/th[4]",
+        bids = scrape_regular_website_2(driver, url="http://www.dencollc.com",basis_index=4, find_by_option=1, xpath_for_table="/html/body/div[1]/div[2]/div[2]/div[1]/table/tbody/tr[1]/th[4]",
                                         wait_by_option = 1,class_name="cashbid_table") # iframe_xpath="/html/body/div[1]/div[2]/div[2]/iframe[2]",
                                         
         if insert_into_sheet(46, bids):
             print("success for row 46")
             logger.info("success for row 46")
+            logger.info(f"inserted bids are: {bids}")
     
 
-        bids = scrape_regular_website_2(url="https://www.dakotaethanol.com/index.cfm?show=11&mid=3",
+        bids = scrape_regular_website_2(driver, url="https://www.dakotaethanol.com/index.cfm?show=11&mid=3",
                                         basis_index=2, find_by_option=1, wait_by_option=2, row_end_index=10)
         if insert_into_sheet(44, bids):
             print("success for row 44")
             logger.info("success for row 44")
+            logger.info(f"inserted bids are: {bids}")
 
-        bids = scrape_regular_website_2(url="http://www.cie.us/corn_bids.php", class_name='homepage_quoteboard',
+        bids = scrape_regular_website_2(driver, url="http://www.cie.us/corn_bids.php", class_name='homepage_quoteboard',
                                         month_index=1, basis_index=5, find_by_option=1, row_start_index=2,
                                         iframe_xpath="/html/body/div/div/iframe",row_end_index=8)
         if insert_into_sheet(35, bids):
             print("success for row 35")
             logger.info("success for row 35")
+            logger.info(f"inserted bids are: {bids}")
 
-        bids = scrape_regular_website_2(url="http://www.cardinalethanol.com/markets/cash.php?location_filter=30179&showcwt=0",
+        bids = scrape_regular_website_2(driver, url="http://www.cardinalethanol.com/markets/cash.php?location_filter=30179&showcwt=0",
                                         basis_index=6, month_index=1, find_by_option=4, wait_by_option=4, table_id='dpTable1')
         if insert_into_sheet(30, bids):
             print("success for row 30")
             logger.info("success for row 30")
+            logger.info(f"inserted bids are: {bids}")
 
-        bids = scrape_regular_website_2(url="https://www.cgbioenergy.com/cash-bids/", table_id="cashbids-data-table",
+        bids = scrape_regular_website_2(driver, url="https://www.cgbioenergy.com/cash-bids/", table_id="cashbids-data-table",
                                         basis_index=2, find_by_option=4, wait_by_option=4)
         if insert_into_sheet(29, bids):
             print("success for row 29")
             logger.info("success for row 29")
+            logger.info(f"inserted bids are: {bids}")
 
-        bids = scrape_regular_website_2(url="https://bushmillsethanol.com/corn-procurement-and-bids/", table_id="tablepress-4",
+        bids = scrape_regular_website_2(driver, url="https://bushmillsethanol.com/corn-procurement-and-bids/", table_id="tablepress-4",
                                         basis_index=3, find_by_option=4, wait_by_option=4)
         if insert_into_sheet(26, bids):
             print("success for row 26")
             logger.info("success for row 26")
+            logger.info(f"inserted bids are: {bids}")
 
-        bids = scrape_regular_website_2(url="http://dtn.al-corn.com/index.cfm?show=11&mid=17",
+        bids = scrape_regular_website_2(driver, url="http://dtn.al-corn.com/index.cfm?show=11&mid=17",
                                         basis_index=-1, find_by_option=1, wait_by_option=2)
         if insert_into_sheet(6, bids):
             print("success for row 6")
             logger.info("success for row 6")
+            logger.info(f"inserted bids are: {bids}")
 
-        bids = scrape_regular_website_2(url="https://www.aceethanol.com/cash-bids/", table_id="cashbids-data-table",
+        bids = scrape_regular_website_2(driver, url="https://www.aceethanol.com/cash-bids/", table_id="cashbids-data-table",
                                         basis_index=-1, find_by_option=4, wait_by_option=2)
         if insert_into_sheet(3, bids):
             print("success for row 3")
             logger.info("success for row 3")
+            logger.info(f"inserted bids are: {bids}")
 
-        bids = scrape_regular_website_2(url="http://www.bigriverbids.com/index.cfm?show=11&mid=17&theLocation=8&layout=19",
+        bids = scrape_regular_website_2(driver, url="http://www.bigriverbids.com/index.cfm?show=11&mid=17&theLocation=8&layout=19",
                                         basis_index=3, find_by_option=1, wait_by_option=2)
         if insert_into_sheet(19, bids):
             print("success for row 19")
             logger.info("success for row 19")
+            logger.info(f"inserted bids are: {bids}")
 
-        bids = scrape_regular_website_2(url="http://phaellc.com/receiving/cash-bids/", wait_by_option=3, find_by_option=1,
+        bids = scrape_regular_website_2(driver, url="http://phaellc.com/receiving/cash-bids/", wait_by_option=3, find_by_option=1,
                                         class_name='homepage_quoteboard', month_index=1, basis_index=3, row_start_index=2,
                                         iframe_xpath="//*[@id=\"post-917\"]/div/p/iframe")
         if insert_into_sheet(160, bids):
             print("success for row 160")
             logger.info("success for row 160")
+            logger.info(f"inserted bids are: {bids}")
 
-        bids = scrape_regular_website_2(url="https://www.siouxlandenergy.com/markets/cash.php", wait_by_option=3, find_by_option=1,
+        bids = scrape_regular_website_2(driver, url="https://www.siouxlandenergy.com/markets/cash.php", wait_by_option=3, find_by_option=1,
                                         class_name='homepage_quoteboard', month_index=1, basis_index=-3, row_start_index=2)
         if insert_into_sheet(172, bids):
             print("success for row 172")
             logger.info("success for row 172")
+            logger.info(f"inserted bids are: {bids}")
 
-        bids = scrape_regular_website_2(url="https://www.agtegra.com/grain/cash-bids?format=table&groupby=ccommodity&setLocation=3121&commodity=",
+        bids = scrape_regular_website_2(driver, url="https://www.agtegra.com/grain/cash-bids?format=table&groupby=ccommodity&setLocation=3121&commodity=",
                                         find_by_option=1, class_name="cashbid_table cashbid_fulltable", wait_by_option=1,
                                         month_index=1, basis_index=-2, row_start_index=2,
                                         xpath_for_table="/html/body/form/main/div[2]/div/div/div[1]/div/div/div[2]/table",
@@ -1206,55 +1278,64 @@ def fetch_and_insert_regular_websitedata():
         if insert_into_sheet(167, bids):
             print("success for row 167")
             logger.info("success for row 167")
+            logger.info(f"inserted bids are: {bids}")
 
-        bids = scrape_regular_website_2(url="https://www.ringneckenergy.com/cashbids", find_by_option=1, wait_by_option=3,
+        bids = scrape_regular_website_2(driver, url="https://www.ringneckenergy.com/cashbids", find_by_option=1, wait_by_option=3,
                                         class_name="homepage_quoteboard", month_index=1, basis_index=4, row_start_index=2, row_end_index=9)
         if insert_into_sheet(169, bids):
             print("success for row 169")
             logger.info("success for row 169")
+            logger.info(f"inserted bids are: {bids}")
 
-        bids = scrape_eliteoctane(url="https://www.eliteoctane.net")
+        bids = scrape_eliteoctane(driver, url="https://www.eliteoctane.net")
         # , find_by_option=1, wait_by_option=1,
         #                                 class_name="cashbid_table", month_index=1, basis_index=5,
         #                                 row_start_index=2, xpath_for_table="/html/body/div[3]/div[1]/div[2]/table")
         if insert_into_sheet(52, bids):
             print("success for row 52")
             logger.info("success for row 52")
+            logger.info(f"inserted bids are: {bids}")
 
-        bids = scrape_regular_website_2(url="http://pce-coops.com/resources/cashbids/", find_by_option=1, month_index=1,
+        bids = scrape_regular_website_2(driver, url="http://pce-coops.com/resources/cashbids/", find_by_option=1, month_index=1,
                                         basis_index=-3, class_name="homepage_quoteboard", row_start_index=2,
                                         iframe_xpath="//*[@id=\"post-70741\"]/div[3]/div/div/div/div/div/div/div/iframe", row_end_index=9)
         if insert_into_sheet(4, bids):
             print("success for row 4")
             logger.info("success for row 4")
+            logger.info(f"inserted bids are: {bids}")
 
-        bids = scrape_regular_website_2(url="http://www.bigriverbids.com/index.cfm?show=11&mid=17&theLocation=2&layout=19",
+        bids = scrape_regular_website_2(driver, url="http://www.bigriverbids.com/index.cfm?show=11&mid=17&theLocation=2&layout=19",
                                         basis_index=3, wait_by_option=2, find_by_option=1)
         if insert_into_sheet(21, bids):
             print("success for row 21")
             logger.info("success for row 21")
+            logger.info(f"inserted bids are: {bids}")
 
-        bids = scrape_regular_website_2(url="http://www.bigriverbids.com/index.cfm?show=11&mid=17&theLocation=1&layout=19",
+        bids = scrape_regular_website_2(driver, url="http://www.bigriverbids.com/index.cfm?show=11&mid=17&theLocation=1&layout=19",
                                         basis_index=3, wait_by_option=2, find_by_option=1)
         if insert_into_sheet(22, bids):
             print("success for row 22")
             logger.info("success for row 22")
+            logger.info(f"inserted bids are: {bids}")
 
-        bids = scrape_regular_website_2(url="http://www.bigriverbids.com/index.cfm?show=11&mid=17&theLocation=5&layout=19",
+        bids = scrape_regular_website_2(driver, url="http://www.bigriverbids.com/index.cfm?show=11&mid=17&theLocation=5&layout=19",
                                         basis_index=5, find_by_option=1, wait_by_option=2, row_end_index=9)
         if insert_into_sheet(20, bids):
             print("success for row 20")
             logger.info("success for row 20")
+            logger.info(f"inserted bids are: {bids}")
         logger.info("Downloading basis price from cvec")
-        bids = scrape_cvec("http://dtn.cvec.com/index.cfm?show=11&mid=3&cmid=1&layout=1034")
+        bids = scrape_cvec(driver, "http://dtn.cvec.com/index.cfm?show=11&mid=3&cmid=1&layout=1034")
         if insert_into_sheet(38, bids):
             print("success for row 38")
             logger.info("success for row 38")
+            logger.info(f"inserted bids are: {bids}")
 
         # bids = scrape_homeland("https://www.homelandenergysolutions.com/grain-bids/")
         # if insert_into_sheet(92, bids):
         #     print("success for row 92")
         #     logger.info("success for row 92")
+            # logger.info(f"inserted bids are: {bids}")
     except Exception as e:
         print(sys.exc_info()[0])
         print("error occoured in fetch_and_insert_regular_websitedata")
@@ -1322,6 +1403,10 @@ def main():
     try:
         # kill_excel()
         starttime=datetime.now()
+        # s=Service(ChromeDriverManager().install())
+        # driver = webdriver.Chrome(service=s)
+        driver = webdriver.Chrome(executable_path=DRIVER_PATH, options=chrome_options)
+        driver.maximize_window()
         # logging.warning('NYISO: Start work at {} ...'.format(starttime.strftime('%Y-%m-%d %H:%M:%S')))
         logger.info("initializing new sheet...")
         excel_app = xw.App(visible=False)
@@ -1344,6 +1429,7 @@ def main():
         if insert_into_sheet(2, bids):
             print("success for row 2")
             logger.info("success for row 2")
+            logger.info(f"inserted bids are: {bids}")
         time.sleep(10)
         bid_prices.save()
         bid_prices.close()
@@ -1384,20 +1470,23 @@ def main():
         if insert_into_sheet(2, bids):
             print("success for row 2")
             logger.info("success for row 2")
+            logger.info(f"inserted bids are: {bids}")
         
         bids = scrape_midwestagenergy()
         if insert_into_sheet(23, bids):
             print("success for row 23")
             logger.info("success for row 23")
+            logger.info(f"inserted bids are: {bids}")
         
-        bids = scrape_frvethanol()
+        bids = scrape_frvethanol(driver)
         if insert_into_sheet(61, bids):
             print("success for row 61")
             logger.info("success for row 61")
+            logger.info(f"inserted bids are: {bids}")
         
-        scrape_and_insert_gpreinc()
-        fetch_and_insert_fhr()
-        fetch_and_insert_regular_websitedata()
+        scrape_and_insert_gpreinc(driver)
+        fetch_and_insert_fhr(driver)
+        fetch_and_insert_regular_websitedata(driver)
         time.sleep(10)
         bid_prices.save()
         logger.info("saved file finally")
@@ -1441,7 +1530,7 @@ if __name__ == "__main__":
         log_json='[{"JOB_ID": "'+str(job_id)+'","CURRENT_DATETIME": "'+str(datetime.now())+'"}]'
         bu_alerts.bulog(process_name="CORN BID PRICE SCRAPPER", database='POWERDB',status='Failed',table_name = '', row_count=0, log=log_json, warehouse='ITPYTHON_WH',process_owner='Manish')
         bu_alerts.send_mail(
-            receiver_email = receiver_email,
+            receiver_email = receiver_email1,
             mail_subject ='JOB FAILED - CORN BID PRICE SCRAPPER',
             mail_body = 'CORN BID PRICE SCRAPPER failed during execution, Attached logs',
             attachment_location = logfile)
