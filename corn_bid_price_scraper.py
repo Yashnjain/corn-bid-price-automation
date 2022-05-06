@@ -13,20 +13,21 @@ from bs4 import BeautifulSoup
 from dateutil.relativedelta import relativedelta
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
-# from selenium.webdriver.chrome.service import Service
-# from webdriver_manager.chrome import ChromeDriverManager
+from selenium.webdriver.chrome.service import Service
+from webdriver_manager.chrome import ChromeDriverManager
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import Select
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver import ActionChains
 import bu_alerts
+# import pdb
 
 job_id=np.random.randint(1000000,9999999)
 
 # receiver_email_1 = 'imam.khan@biourja.com'
 receiver_email = 'indiapowerit@biourja.com, DAPower@biourja.com'
-receiver_email1 = 'imam.khan@biourja.com'
+# receiver_email1 = 'imam.khan@biourja.com'
 #path = 'Cornbids.xlsx'
 path=r"S:\IT Dev\Production_Environment\corn-bid-price-automation"
 
@@ -43,13 +44,15 @@ logger.setLevel(logging.INFO)
 # browser user_agent
 #chrome as a driver
 headers = {'User-Agent': 'Mozilla/5.0'}
-# DRIVER_PATH = r'S:\IT Dev\Production_Environment\corn-bid-price-automation\chromedriver.exe'
-DRIVER_PATH = r'S:\IT Dev\Production_Environment\chromedriver\chromedriver.exe'
-# options = Options()
+DRIVER_PATH = r'S:\IT Dev\Production_Environment\corn-bid-price-automation\geckodriver.exe'
+# DRIVER_PATH = r'S:\IT Dev\Production_Environment\chromedriver\chromedriver.exe'
+options = Options()
 # options.headless = True
 # driver = webdriver.Chrome(executable_path=DRIVER_PATH)
-chrome_options = webdriver.ChromeOptions()
-chrome_options.headless = True
+# chrome_options = webdriver.ChromeOptions()
+#chrome_options.add_argument('--no-sandbox')
+#chrome_options.add_argument('--disable-dev-shm-usage')               
+# chrome_options.headless = True
 
 # driver.get("https://www.google.com/")
 print("Done")
@@ -244,7 +247,7 @@ def scrape_fhr(driver, url):
             month = driver.find_element_by_xpath(f"/html/body/div[1]/div/div[2]/div/div[2]/div[1]/div[1]/div/div[2]/div/div[1]/div[2]/div[{i}]/div/div[1]/p").text
             month = month.split()
             month = month[0]+'01'+month[1]
-            ml.apend(month)
+            ml.append(month)
             basis = driver.find_element_by_xpath(f"/html/body/div[1]/div/div[2]/div/div[2]/div[1]/div[1]/div/div[2]/div/div[1]/div[2]/div[{i}]/div/div[3]").text
             bl.append(basis)
             month = datetime.strptime(month, '%B%d%Y').date()
@@ -1034,7 +1037,7 @@ def fetch_and_insert_regular_websitedata(driver):
                     "https://valero-lakota.aghostportal.com/index.cfm?show=11&mid=3": 200,
                     "http://valero.aghostportal.com/index.cfm?show=11&mid=3": 203,
                     "https://valero-mtvernon.aghostportal.com/index.cfm?show=11&mid=3": 204}
-
+        # pdb.set_trace()
         for url in valero_urls:
             bids = scrape_regular_website_2(driver, url=url, wait_by_option=2, find_by_option=1, basis_index=2)
             if insert_into_sheet(valero_urls[url], bids):
@@ -1403,9 +1406,32 @@ def main():
     try:
         # kill_excel()
         starttime=datetime.now()
-        # s=Service(ChromeDriverManager().install())
-        # driver = webdriver.Chrome(service=s)
-        driver = webdriver.Chrome(executable_path=DRIVER_PATH, options=chrome_options)
+        #s=Service(ChromeDriverManager().install())
+        #driver = webdriver.Chrome(service=s)
+
+        # driver = webdriver.Chrome(executable_path=DRIVER_PATH, options=chrome_options)
+        mime_types=['application/pdf'
+                            ,'text/plain',
+                            'application/vnd.ms-excel',
+                            'test/csv',
+                            'application/zip',
+                            'application/csv',
+                            'text/comma-separated-values','application/download','application/octet-stream'
+                            ,'binary/octet-stream'
+                            ,'application/binary'
+                            ,'application/x-unknown']
+                            
+            # path=os.getcwd()+'\\'
+            # download_path = path
+        profile = webdriver.FirefoxProfile()
+        profile.set_preference('browser.download.folderList', 2)
+        profile.set_preference('browser.download.manager.showWhenStarting', False)
+        # profile.set_preference('browser.download.dir', temp_download)
+        profile.set_preference('pdfjs.disabled', True)
+        profile.set_preference('browser.helperApps.neverAsk.saveToDisk', ','.join(mime_types))
+        profile.set_preference('browser.helperApps.neverAsk.openFile',','.join(mime_types))
+        # browser = webdriver.Firefox(executable_path='C:\\AJ\\PowerSignals\\paper_position_report_bnp\\geckodriver.exe', firefox_profile=profile)
+        driver = webdriver.Firefox(executable_path=os.getcwd()+'\\geckodriver.exe', firefox_profile=profile)
         driver.maximize_window()
         # logging.warning('NYISO: Start work at {} ...'.format(starttime.strftime('%Y-%m-%d %H:%M:%S')))
         logger.info("initializing new sheet...")
@@ -1530,7 +1556,7 @@ if __name__ == "__main__":
         log_json='[{"JOB_ID": "'+str(job_id)+'","CURRENT_DATETIME": "'+str(datetime.now())+'"}]'
         bu_alerts.bulog(process_name="CORN BID PRICE SCRAPPER", database='POWERDB',status='Failed',table_name = '', row_count=0, log=log_json, warehouse='ITPYTHON_WH',process_owner='Manish')
         bu_alerts.send_mail(
-            receiver_email = receiver_email1,
+            receiver_email = receiver_email,
             mail_subject ='JOB FAILED - CORN BID PRICE SCRAPPER',
             mail_body = 'CORN BID PRICE SCRAPPER failed during execution, Attached logs',
             attachment_location = logfile)
