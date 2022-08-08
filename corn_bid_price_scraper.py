@@ -1540,10 +1540,10 @@ if __name__ == "__main__":
     # logging.warning('Start work at {} ...'.format(starttime.strftime('%Y-%m-%d %H:%M:%S')))
     try:
         log_json='[{"JOB_ID": "'+str(job_id)+'","CURRENT_DATETIME": "'+str(datetime.now())+'"}]'
-        bu_alerts.bulog(process_name="CORN_BID_PRICE_SCRAPPER", database='POWERDB',status='Started',table_name = '', row_count=0, log=log_json, warehouse='ITPYTHON_WH',process_owner='Manish')
+        bu_alerts.bulog(process_name="CORN_BID_PRICE_SCRAPPER", database='POWERDB',status='Started',table_name = '', row_count=0, log=log_json, warehouse='ITPYTHON_WH',process_owner='Imam')
         main()
         log_json='[{"JOB_ID": "'+str(job_id)+'","CURRENT_DATETIME": "'+str(datetime.now())+'"}]'
-        bu_alerts.bulog(process_name="CORN BID PRICE SCRAPPER", database='POWERDB',status='Completed',table_name = '', row_count=0, log=log_json, warehouse='ITPYTHON_WH',process_owner='Manish')
+        bu_alerts.bulog(process_name="CORN BID PRICE SCRAPPER", database='POWERDB',status='Completed',table_name = '', row_count=0, log=log_json, warehouse='ITPYTHON_WH',process_owner='Imam')
         logging.info('Execution Done')
         bu_alerts.send_mail(
             receiver_email = receiver_email,
@@ -1554,7 +1554,7 @@ if __name__ == "__main__":
         print("Exception caught during execution: ",e)
         logging.exception(f'Exception caught during execution: {e}')
         log_json='[{"JOB_ID": "'+str(job_id)+'","CURRENT_DATETIME": "'+str(datetime.now())+'"}]'
-        bu_alerts.bulog(process_name="CORN BID PRICE SCRAPPER", database='POWERDB',status='Failed',table_name = '', row_count=0, log=log_json, warehouse='ITPYTHON_WH',process_owner='Manish')
+        bu_alerts.bulog(process_name="CORN BID PRICE SCRAPPER", database='POWERDB',status='Failed',table_name = '', row_count=0, log=log_json, warehouse='ITPYTHON_WH',process_owner='Imam')
         bu_alerts.send_mail(
             receiver_email = receiver_email,
             mail_subject ='JOB FAILED - CORN BID PRICE SCRAPPER',
