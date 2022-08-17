@@ -228,7 +228,8 @@ def scrape_fhr(driver, url):
     month_to_basis = dict()
     try:
         driver.get(url)
-        WebDriverWait(driver, 15).until(EC.element_to_be_clickable((By.XPATH, '/html/body/div[1]/div/div[2]/div/div[2]/div[1]/div[1]/div/div[2]/div/div[1]/div[2]/div[1]')))
+        time.sleep(10)
+        WebDriverWait(driver, 60).until(EC.element_to_be_clickable((By.XPATH, '/html/body/div[1]/div/div[2]/div/div[2]/div[1]/div[1]/div/div[2]/div/div[1]/div[2]/div[1]')))
         # soup = BeautifulSoup(driver.page_source, features='lxml')
         # tables = soup.find_all('table', attrs={'class': 'priceYear'})
         # for table in tables:
@@ -244,21 +245,85 @@ def scrape_fhr(driver, url):
         ml = []
         bl = []
         for i in range(1,8):
+            monthCheck=False
             month = driver.find_element_by_xpath(f"/html/body/div[1]/div/div[2]/div/div[2]/div[1]/div[1]/div/div[2]/div/div[1]/div[2]/div[{i}]/div/div[1]/p").text
-            month = month.split()
-            month = month[0]+'01'+month[1]
-            ml.append(month)
-            basis = driver.find_element_by_xpath(f"/html/body/div[1]/div/div[2]/div/div[2]/div[1]/div[1]/div/div[2]/div/div[1]/div[2]/div[{i}]/div/div[4]").text
-            bl.append(basis)
-            month = datetime.strptime(month, '%B%d%Y').date()
-            if month in month_to_basis:
-                current = month_to_basis[month]
-                if basis <= 0 and current <= 0:
-                    month_to_basis[month] = round((((-1 * basis) + (-1 * current)) / 2) * -1, 3)
-                else:
-                    month_to_basis[month] = round((basis + current) / 2, 3)
+            if "overrun" in month.lower():
+                month = driver.find_element_by_xpath(f"/html/body/div[1]/div/div[2]/div/div[2]/div[1]/div[1]/div/div[2]/div/div[1]/div[2]/div[{i}]/div/div[1]/span").text
+                month = month.split('—')[0]
+                month = datetime.strptime(month, '%m/%d/%y').date()
+                n_month = datetime.strftime(month.replace(day=1), "%B%d%Y")
+                ml.append(n_month)
+            elif '/' in month: # Handling 'October/November 2022'
+                month = month[month.find('/')+1:]
+                nMonth = month[:month.find('/')]+'01'+month[month.find('/'):].split()[-1]
+                monthCheck = True
+                
+                for month in [month, nMonth]:
+                    ml.append(month)
+                    try:#HAndling September Sept Sep Cases for date conversion
+                        month = datetime.strptime(month, '%B%d%Y').date()
+                    except:
+                        try:
+                            month = datetime.strptime(month, '%b%d%Y').date()
+                        except:
+                            try:
+                                month = driver.find_element_by_xpath(f"/html/body/div[1]/div/div[2]/div/div[2]/div[1]/div[1]/div/div[2]/div/div[1]/div[2]/div[{i}]/div/div[1]/p").text
+                                month = month.split()
+                                month = month[0][:-1]+'01'+month[1] #Removing Last Letter Sept to Sep for date conversion
+                                month = datetime.strptime(month, '%b%d%Y').date()
+                            except Exception as e:
+                                raise e
             else:
-                month_to_basis[month] = basis
+                if month[0:2].lower() in ('lh', 'fh'):
+                    month = month[2:].strip()
+                
+                month = month.split()
+                month = month[0]+'01'+month[1]
+                ml.append(month)
+                try:#HAndling September Sept Sep Cases for date conversion
+                    month = datetime.strptime(month, '%B%d%Y').date()
+                except:
+                    try:
+                        month = datetime.strptime(month, '%b%d%Y').date()
+                    except:
+                        try:
+                            month = driver.find_element_by_xpath(f"/html/body/div[1]/div/div[2]/div/div[2]/div[1]/div[1]/div/div[2]/div/div[1]/div[2]/div[{i}]/div/div[1]/p").text
+                            month = month.split()
+                            month = month[0][:-1]+'01'+month[1] #Removing Last Letter Sept to Sep for date conversion
+                            month = datetime.strptime(month, '%b%d%Y').date()
+                        except Exception as e:
+                            raise e
+
+
+
+            
+            
+            if not monthCheck:
+                basis = float(driver.find_element_by_xpath(f"/html/body/div[1]/div/div[2]/div/div[2]/div[1]/div[1]/div/div[2]/div/div[1]/div[2]/div[{i}]/div/div[4]").text.replace("$",""))
+                bl.append(basis)
+                
+                if month in month_to_basis:
+                    current = month_to_basis[month]
+                    if basis <= 0 and current <= 0:
+                        month_to_basis[month] = round((((-1 * basis) + (-1 * current)) / 2) * -1, 3)
+                    else:
+                        month_to_basis[month] = round((basis + current) / 2, 3)
+                else:
+                    month_to_basis[month] = basis
+            else:
+                for month in [month, nMonth]:
+                    basis = float(driver.find_element_by_xpath(f"/html/body/div[1]/div/div[2]/div/div[2]/div[1]/div[1]/div/div[2]/div/div[1]/div[2]/div[{i}]/div/div[4]").text.replace("$",""))
+                    bl.append(basis)
+                    
+                    if month in month_to_basis:
+                        current = month_to_basis[month]
+                        if basis <= 0 and current <= 0:
+                            month_to_basis[month] = round((((-1 * basis) + (-1 * current)) / 2) * -1, 3)
+                        else:
+                            month_to_basis[month] = round((basis + current) / 2, 3)
+                    else:
+                        month_to_basis[month] = basis
+            
 
         return month_to_basis
 
@@ -1407,7 +1472,7 @@ def main():
     
     #initializing sheet for single index.
     try:
-        # kill_excel()
+        kill_excel()
         starttime=datetime.now()
         #s=Service(ChromeDriverManager().install())
         #driver = webdriver.Chrome(service=s)
@@ -1476,6 +1541,7 @@ def main():
     #starting the complete process 
     time.sleep(10)
     try:
+        kill_excel()
         starttime=datetime.now()
         # logging.warning('NYISO: Start work at {} ...'.format(starttime.strftime('%Y-%m-%d %H:%M:%S')))
         logger.info("initializing new sheet...")
