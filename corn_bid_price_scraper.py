@@ -1619,7 +1619,7 @@ if __name__ == "__main__":
         logging.info('Execution Done')
         bu_alerts.send_mail(
             receiver_email = receiver_email,
-            mail_subject ='TEST JOB SUCCESS - CORN_BID_PRICE_SCRAPPER',
+            mail_subject ='JOB SUCCESS - CORN_BID_PRICE_SCRAPPER',
             mail_body = 'CORN BID PRICE SCRAPPER completed successfully, Attached logs',
             attachment_location = logfile)        
     except Exception as e:
@@ -1629,7 +1629,7 @@ if __name__ == "__main__":
         bu_alerts.bulog(process_name="CORN BID PRICE SCRAPPER", database='POWERDB',status='Failed',table_name = '', row_count=0, log=log_json, warehouse='ITPYTHON_WH',process_owner='Imam')
         bu_alerts.send_mail(
             receiver_email = receiver_email,
-            mail_subject ='TEST JOB FAILED - CORN BID PRICE SCRAPPER',
+            mail_subject ='JOB FAILED - CORN BID PRICE SCRAPPER',
             mail_body = 'CORN BID PRICE SCRAPPER failed during execution, Attached logs',
             attachment_location = logfile)
         sys.exit(-1)
