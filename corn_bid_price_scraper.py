@@ -6,6 +6,7 @@ import psutil
 import logging
 import requests
 import bu_alerts
+import bu_config
 import numpy as np
 import xlwings as xw
 from datetime import datetime
@@ -1308,12 +1309,11 @@ def kill_excel():
         raise e
 
 
-def main():
+def main(bid_price_sheet):
     global bid_prices
     #initializing sheet for single index.
     try:
         kill_excel()
-        starttime=datetime.now()
         mime_types=['application/pdf'
                             ,'text/plain',
                             'application/vnd.ms-excel',
@@ -1362,17 +1362,15 @@ def main():
         print(sys.exc_info()[0])
         logging.info("error occoured in main",ex)
         logging.info(sys.exc_info()[0])
-        # raise ex
+        raise ex
         
     #starting the complete process 
     time.sleep(10)
     try:
         kill_excel()
-        starttime=datetime.now()
         logging.info("initializing new sheet...")
         excel_app = xw.App(visible=False)
-        bid_prices = excel_app.books.open(r"\\biourja.local\biourja\India Sync\India\Automated Reports\Corn Bid\Cornbids.xlsx")
-        status = initialize_new_sheet(bid_prices)
+        bid_prices = excel_app.books.open(bid_price_sheet)
         if status:
             print("new sheet created, starting the scraping process...")
             logging.info("new sheet created, starting the scraping process...")
@@ -1419,71 +1417,89 @@ def main():
             driver.quit()
         except:
             pass
-        endtime=datetime.now()
-        logging.warning('Complete work at {} ...'.format(endtime.strftime('%Y-%m-%d %H:%M:%S')))
-        logging.warning('Total time taken: {} seconds'.format((endtime-starttime).total_seconds()))
 
 
 def corn_bid_runner():
-    global month_list, future_months , month_number_dic
-    job_id=np.random.randint(1000000,9999999)
-
-    receiver_email = 'indiapowerit@biourja.com, sujit.davde@biourja.com'
-    path=r"S:\IT Dev\Production_Environment\corn-bid-price-automation"
-
-    logfile = os.getcwd() + '\\logs\\' + str(datetime.today().date()) + '_CornBidPrice_Logfile.txt'
-    logging.basicConfig(filename=logfile, filemode='w',
-                        format='%(asctime)s %(message)s')
-
-    download_path = path + '\\download\\'
-
-    #chrome as a driver
-    headers = {'User-Agent': 'Mozilla/5.0'}
-    DRIVER_PATH = r'S:\IT Dev\Production_Environment\corn-bid-price-automation\geckodriver.exe'
-    # DRIVER_PATH = r'S:\IT Dev\Production_Environment\chromedriver\chromedriver.exe'
-    options = Options()
-
-
-    print("Done")
-    month_to_basis={}
-
-    # month list used to check name of months on websites
-    month_list = ['jan', 'feb', 'mar', 'apr', 'may', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dec']
-    month_number_dic = {'jan': '01','feb':'02','mar':'03','apr':'04','may':'05','jun':'06','jul':'07','aug':'08','sep':'09','oct':'10','nov':'11','dec':'12'}
-
-    # this section is used to define future months
-    # that are to be set as new columns in the new sheet
-    base_date = datetime.today().date().replace(day=1)
-    future_months = list()
-    for i in range(0, 6):
-        future_months.append(base_date + relativedelta(months=i))
-    
-    ###############################################################################################################
+    global month_list, future_months , month_number_dic 
     logging.info('Execution Started')
-    rows=0
     time_start = time.time()
     try:
-        log_json='[{"JOB_ID": "'+str(job_id)+'","CURRENT_DATETIME": "'+str(datetime.now())+'"}]'
-        bu_alerts.bulog(process_name="CORN_BID_PRICE_SCRAPPER", database='POWERDB',status='Started',table_name = '', row_count=0, log=log_json, warehouse='ITPYTHON_WH',process_owner='Imam')
-        main()
-        log_json='[{"JOB_ID": "'+str(job_id)+'","CURRENT_DATETIME": "'+str(datetime.now())+'"}]'
-        bu_alerts.bulog(process_name="CORN BID PRICE SCRAPPER", database='POWERDB',status='Completed',table_name = '', row_count=0, log=log_json, warehouse='ITPYTHON_WH',process_owner='Imam')
+        job_id=np.random.randint(1000000,9999999)
+        logfile = os.getcwd() + '\\logs\\CornBidPrice_Logfile.txt'
+        for handler in logging.root.handlers[:]:
+            logging.root.removeHandler(handler)
+        logging.basicConfig(
+            level=logging.INFO,
+            format='%(asctime)s [%(levelname)s] - %(message)s',
+            filename=logfile)
+        
+        credential_dict = bu_config.get_config('CORN_BID_PRICE_SCRAPER', 'N',other_vert= True)
+        database=credential_dict['DATABASE'].split(";")[0]
+        warehouse=credential_dict['DATABASE'].split(";")[1]
+        table_name = credential_dict['TABLE_NAME']
+        path= credential_dict["API_KEY"].split(";")[0]
+        bid_price_sheet= credential_dict["API_KEY"].split(";")[1]
+        
+        job_name = credential_dict['PROJECT_NAME']
+        owner = credential_dict['IT_OWNER']
+        receiver_email = credential_dict['EMAIL_LIST']
+        
+        ######################## Uncomment For Testing###########################
+        database="BUITDB_DEV"
+        warehouse="BUIT_WH"
+        receiver_email="amanullah.khan@biourja.com"
+        #########################################################################
+
+        download_path = path + '\\download\\'
+        #chrome as a driver
+        headers = {'User-Agent': 'Mozilla/5.0'}
+        DRIVER_PATH = r'S:\IT Dev\Production_Environment\corn-bid-price-automation\geckodriver.exe'
+        # DRIVER_PATH = r'S:\IT Dev\Production_Environment\chromedriver\chromedriver.exe'
+        options = Options()
+        
+        # month list used to check name of months on websites
+        month_list = ['jan', 'feb', 'mar', 'apr', 'may', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dec']
+        month_number_dic = {'jan': '01','feb':'02','mar':'03','apr':'04','may':'05','jun':'06','jul':'07','aug':'08','sep':'09','oct':'10','nov':'11','dec':'12'}
+
+        # this section is used to define future months
+        # that are to be set as new columns in the new sheet
+        base_date = datetime.today().date().replace(day=1)
+        future_months = list()
+        for i in range(0, 6):
+            future_months.append(base_date + relativedelta(months=i))
+            
+        #In prod bualerts works on  POWERDB  ITPYTHON_WH
+        # BU_LOG entry(started) in PROCESS_LOG table
+        log_json = '[{"JOB_ID": "'+str(job_id)+'","JOB_NAME": "'+str(job_name)+'","CURRENT_DATETIME": "'+str(datetime.now())+'","STATUS": "STARTED"}]'
+        bu_alerts.bulog(process_name=job_name,table_name=table_name,status='STARTED',process_owner=owner ,row_count=0,log=log_json,database=database,warehouse=warehouse)
+        
+        main(bid_price_sheet)
+        
+        # BU_LOG entry(completed) in PROCESS_LOG table
+        log_json = '[{"JOB_ID": "'+str(job_id)+'","JOB_NAME": "'+str(job_name)+'","CURRENT_DATETIME": "'+str(datetime.now())+'","STATUS": "COMPLETED"}]'
+        bu_alerts.bulog(process_name=job_name,table_name=table_name,status='COMPLETED',process_owner=owner ,row_count=1,log=log_json,database=database,warehouse=warehouse)
+        
         logging.info('Execution Done')
         bu_alerts.send_mail(
             receiver_email = receiver_email,
-            mail_subject ='JOB SUCCESS - CORN_BID_PRICE_SCRAPPER',
-            mail_body = 'CORN BID PRICE SCRAPPER completed successfully, Attached logs',
-            attachment_location = logfile)        
+            mail_subject =f'JOB SUCCESS - {job_name}',
+            mail_body = f'{job_name} completed successfully, Attached logs',
+            attachment_location = logfile)
+            
     except Exception as e:
         print("Exception caught during execution: ",e)
         logging.exception(f'Exception caught during execution: {e}')
-        log_json='[{"JOB_ID": "'+str(job_id)+'","CURRENT_DATETIME": "'+str(datetime.now())+'"}]'
-        bu_alerts.bulog(process_name="CORN BID PRICE SCRAPPER", database='POWERDB',status='Failed',table_name = '', row_count=0, log=log_json, warehouse='ITPYTHON_WH',process_owner='Imam')
+        
+        # BU_LOG entry(Failed) in PROCESS_LOG table
+        log_json = '[{"JOB_ID": "'+str(job_id)+'","JOB_NAME": "'+str(job_name)+'","CURRENT_DATETIME": "'+str(datetime.now())+'","STATUS": "FAILED"}]'
+        bu_alerts.bulog(process_name=job_name,table_name=table_name,status='FAILED',process_owner=owner ,row_count=0,log=log_json,database=database,warehouse=warehouse)
+        
         bu_alerts.send_mail(
             receiver_email = receiver_email,
-            mail_subject ='JOB FAILED - CORN BID PRICE SCRAPPER',
-            mail_body = 'CORN BID PRICE SCRAPPER failed during execution, Attached logs',
+            mail_subject =f'JOB FAILED - {job_name}',
+            mail_body = f'{job_name} failed during execution, Attached logs',
             attachment_location = logfile)
+        
         sys.exit(-1)
     time_end = time.time()
     logging.warning('It took {} seconds to run.'.format(time_end - time_start))
