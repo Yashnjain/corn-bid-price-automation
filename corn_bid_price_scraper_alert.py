@@ -263,8 +263,8 @@ def scrape_and_insert_gpreinc():
         select = Select(
             driver.find_element_by_xpath("//*[@id=\"dtn_cashBids_container\"]/div/div[1]/form/div/div[1]"
         
-                                         "/div/dtn-select[2]/label/select"))
-                                         
+                                        "/div/dtn-select[2]/label/select"))
+                                        
         select.select_by_value("Corn")
         for city in city_select_values:
             month_to_basis = dict()
