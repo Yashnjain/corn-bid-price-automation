@@ -17,6 +17,7 @@ from dateutil.relativedelta import relativedelta
 from selenium.webdriver.support.ui import Select
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.support.ui import WebDriverWait
+from webdriver_manager.firefox import GeckoDriverManager
 from selenium.webdriver.support import expected_conditions as EC
 
 
@@ -50,15 +51,15 @@ def initialize_new_sheet(bid_prices):
         return True
     except Exception as e:
         print(sys.exc_info()[0])
-        print(f"error occoured in initalizing new sheet method : {e}")
+        print(f"error occured in initializing new sheet method : {e}")
         logging.info(sys.exc_info()[0])
-        logging.info(f"error occoured in initalizing new sheet method : {e}")
+        logging.info(f"error occured in initializing new sheet method : {e}")
         return False
 
 
 # to scrape from a singular website.
 # these return a dictionary of month date as keys and basis as values.
-# returns an empty dict if it fails or excpetion occours
+# returns an empty dict if it fails or exception occours
 def scrape_absenergy():
     month_to_basis = dict()
     try:
@@ -91,9 +92,9 @@ def scrape_absenergy():
         return month_to_basis
     except Exception as e:
         print(sys.exc_info()[0])
-        print(f"error occoured with website: http://www.absenergy.org/grainbids.html (scrape_absenergy method): {e}")
+        print(f"error occured with website: http://www.absenergy.org/grainbids.html (scrape_absenergy method): {e}")
         logging.info(sys.exc_info()[0])
-        logging.info(f"error occoured with website: http://www.absenergy.org/grainbids.html (scrape_absenergy method): {e}")
+        logging.info(f"error occured with website: http://www.absenergy.org/grainbids.html (scrape_absenergy method): {e}")
         return month_to_basis
 
 
@@ -121,9 +122,9 @@ def scrape_midwestagenergy():
         return month_to_basis
     except Exception as e:
         print(sys.exc_info()[0])
-        print(f"error occoured with website: https://www.midwestagenergy.com/fccp-blue-flint-bids-19639 (scrape_midwestagenergy) : {e}")
+        print(f"error occured with website: https://www.midwestagenergy.com/fccp-blue-flint-bids-19639 (scrape_midwestagenergy) : {e}")
         logging.info(sys.exc_info()[0])
-        logging.info(f"error occoured with website: https://www.midwestagenergy.com/fccp-blue-flint-bids-19639 (scrape_midwestagenergy): {e}")
+        logging.info(f"error occured with website: https://www.midwestagenergy.com/fccp-blue-flint-bids-19639 (scrape_midwestagenergy): {e}")
         return month_to_basis
 
 
@@ -153,9 +154,9 @@ def scrape_frvethanol(driver):
         return month_to_basis
     except Exception as e:
         print(sys.exc_info()[0])
-        print(f"error occoured with website: https://www.frvethanol.com/cashbids/  (scrape_frvethanol method): {e}")
+        print(f"error occured with website: https://www.frvethanol.com/cashbids/  (scrape_frvethanol method): {e}")
         logging.info(sys.exc_info()[0])
-        logging.info(f"error occoured with website: https://www.frvethanol.com/cashbids/  (scrape_frvethanol method): {e}")
+        logging.info(f"error occured with website: https://www.frvethanol.com/cashbids/  (scrape_frvethanol method): {e}")
         return month_to_basis
 
 
@@ -185,7 +186,7 @@ def scrape_fhr(driver, url):
                 
                 for month in [month, nMonth]:
                     ml.append(month)
-                    #Handling September Sept Sep Cases for date conversion
+                    # Handling September Sept Sep Cases for date conversion
                     try:
                         month = datetime.strptime(month, '%B%d%Y').date()
                     except:
@@ -195,7 +196,7 @@ def scrape_fhr(driver, url):
                             try:
                                 month = driver.find_element_by_xpath(f"/html/body/div[1]/div/div[2]/div/div[2]/div[1]/div[1]/div/div[2]/div/div[1]/div[2]/div[{i}]/div/div[1]/p").text
                                 month = month.split()
-                                #Removing Last Letter Sept to Sep for date conversion
+                                # Removing Last Letter Sept to Sep for date conversion
                                 month = month[0][:-1]+'01'+month[1]
                                 month = datetime.strptime(month, '%b%d%Y').date()
                             except Exception as e:
@@ -206,7 +207,7 @@ def scrape_fhr(driver, url):
                 month = month.split()
                 month = month[0]+'01'+month[1]
                 ml.append(month)
-                #Handling September Sept Sep Cases for date conversion
+                # Handling September Sept Sep Cases for date conversion
                 try:
                     month = datetime.strptime(month, '%B%d%Y').date()
                 except:
@@ -216,7 +217,7 @@ def scrape_fhr(driver, url):
                         try:
                             month = driver.find_element_by_xpath(f"/html/body/div[1]/div/div[2]/div/div[2]/div[1]/div[1]/div/div[2]/div/div[1]/div[2]/div[{i}]/div/div[1]/p").text
                             month = month.split()
-                            #Removing Last Letter Sept to Sep for date conversion
+                            # Removing Last Letter Sept to Sep for date conversion
                             month = month[0][:-1]+'01'+month[1]
                             month = datetime.strptime(month, '%b%d%Y').date()
                         except Exception as e:
@@ -248,9 +249,9 @@ def scrape_fhr(driver, url):
         return month_to_basis
     except Exception as e:
         print(sys.exc_info()[0])
-        print(f"error occoured with website:{url} (scrape_fhr method) : {e}")
+        print(f"error occured with website:{url} (scrape_fhr method) : {e}")
         logging.info(sys.exc_info()[0])
-        logging.info(f"error occoured with website:{url} (scrape_fhr method) : {e}")
+        logging.info(f"error occured with website:{url} (scrape_fhr method) : {e}")
         return month_to_basis
 
 
@@ -270,9 +271,9 @@ def fetch_and_insert_fhr(driver):
         return True
     except Exception as e:
         print(sys.exc_info()[0])
-        print(f"error occoured in fhr_urls(fetch_and_insert_fhr method) : {e}")
+        print(f"error occured in fhr_urls(fetch_and_insert_fhr method) : {e}")
         logging.info(sys.exc_info()[0])
-        logging.info(f"error occoured in fhr_urls(fetch_and_insert_fhr method) : {e}")
+        logging.info(f"error occured in fhr_urls(fetch_and_insert_fhr method) : {e}")
         return False
 
 
@@ -311,9 +312,9 @@ def scrape_and_insert_gpreinc(driver):
         return True
     except Exception as e:
         print(sys.exc_info()[0])
-        print(f"error occoured in gpreinc_urls (scrape_and_insert_gpreinc method): {e}")
+        print(f"error occured in gpreinc_urls (scrape_and_insert_gpreinc method): {e}")
         logging.info(sys.exc_info()[0])
-        logging.info(f"error occoured in gpreinc_urls (scrape_and_insert_gpreinc method): {e}")
+        logging.info(f"error occured in gpreinc_urls (scrape_and_insert_gpreinc method): {e}")
         return False
 
 
@@ -350,9 +351,9 @@ def poet_biorefining2(driver, url, basis_index):
         return month_to_basis
     except Exception as e:
         print(sys.exc_info()[0])
-        print(f"error occoured with website: {url} (poet_biorefining2 method) : {e}")
+        print(f"error occured with website: {url} (poet_biorefining2 method) : {e}")
         logging.info(sys.exc_info()[0])
-        logging.info(f"error occoured with website: {url} (poet_biorefining2 method): {e}")
+        logging.info(f"error occured with website: {url} (poet_biorefining2 method): {e}")
         return month_to_basis
 
 
@@ -365,7 +366,7 @@ def scrape_admfarm(driver, url):
             WebDriverWait(driver,50).until(EC.element_to_be_clickable((By.XPATH, "/html/body/div/div/div/div[3]/div/div/div[1]/div/div[2]/button"))).click()
         except:
             pass
-        #Check is data is loaded or not via basis column
+        # Check is data is loaded or not via basis column
         WebDriverWait(driver, 20).until(EC.element_to_be_clickable((By.XPATH, "/html/body/div/div/div/div/div[3]/main/div/div[2]/div/div/div[2]/div[3]/div/div/div/div[2]/div/div[1]/div[2]/div/div/div/section/header/div[3]/div[1]")))
         
         for i in range(1,12):
@@ -387,9 +388,9 @@ def scrape_admfarm(driver, url):
         return month_to_basis
     except Exception as e:
         print(sys.exc_info()[0])
-        print(f"error occoured with website: {url} (scrape_admfarm method), {e}")
+        print(f"error occured with website: {url} (scrape_admfarm method), {e}")
         logging.info(sys.exc_info()[0])
-        logging.info(f"error occoured with website: {url} (scrape_admfarm method), {e}")
+        logging.info(f"error occured with website: {url} (scrape_admfarm method), {e}")
         return month_to_basis
 
 
@@ -433,9 +434,9 @@ def scrape_regular_website_1(driver, url, basis_index, iframe_xpath=""):
         return month_to_basis
     except Exception as e:
         print(sys.exc_info()[0])
-        print(f"error occoured with website: {url} (scrape_regular_website_1 method), {e}")
+        print(f"error occured with website: {url} (scrape_regular_website_1 method), {e}")
         logging.info(sys.exc_info()[0])
-        logging.info(f"error occoured with website: {url} (scrape_regular_website_1 method), {e}")
+        logging.info(f"error occured with website: {url} (scrape_regular_website_1 method), {e}")
         return month_to_basis
     
     
@@ -470,18 +471,19 @@ def scrape_eliteoctane(driver, url):
         return month_to_basis
     except Exception as e:
         print(sys.exc_info()[0])
-        print(f"error occoured with website: {url} (scrape_eliteoctane method), {e}")
+        print(f"error occured with website: {url} (scrape_eliteoctane method), {e}")
         logging.info(sys.exc_info()[0])
-        logging.info(f"error occoured with website: {url} (scrape_eliteoctane method), {e}")
+        logging.info(f"error occured with website: {url} (scrape_eliteoctane method), {e}")
         return month_to_basis
-    
-    
+
+
 def scrape_ggcorn(driver, url):
     month_to_basis = {}
     try:
         driver.get(url)
         WebDriverWait(driver, 90).until(EC.element_to_be_clickable((By.XPATH, "/html/body/div[1]/div[2]/div[2]/div/div[1]/div[2]/div[1]/table/tbody/tr[1]")))
-        for i in range(2,7):#range(1,6)
+        # Range(1,6)
+        for i in range(2,7):
             month = driver.find_element_by_xpath(f"/html/body/div[1]/div[2]/div[2]/div/div[1]/div[2]/div[1]/table/tbody/tr[{i}]/td[1]").text
             basis = driver.find_element_by_xpath(f"/html/body/div[1]/div[2]/div[2]/div/div[1]/div[2]/div[1]/table/tbody/tr[{i}]/td[5]").text
             basis = float(basis)
@@ -498,9 +500,9 @@ def scrape_ggcorn(driver, url):
         return month_to_basis
     except Exception as e:
         print(sys.exc_info()[0])
-        print(f"error occoured with website: {url} (scrape_ggcorn method), {e}")
+        print(f"error occured with website: {url} (scrape_ggcorn method), {e}")
         logging.info(sys.exc_info()[0])
-        logging.info(f"error occoured with website: {url} (scrape_ggcorn method), {e}")
+        logging.info(f"error occured with website: {url} (scrape_ggcorn method), {e}")
         return month_to_basis
     
     
@@ -529,9 +531,9 @@ def scrape_cvec(driver, url):
         return month_to_basis
     except Exception as e:
         print(sys.exc_info()[0])
-        print(f"error occoured with website: {url} (scrape_cvec method), {e}")
+        print(f"error occured with website: {url} (scrape_cvec method), {e}")
         logging.info(sys.exc_info()[0])
-        logging.info(f"error occoured with website: {url} (scrape_cvec method), {e}")
+        logging.info(f"error occured with website: {url} (scrape_cvec method), {e}")
         return month_to_basis
 
 
@@ -543,8 +545,8 @@ def delete_all_files(folder_path:str):
                 os.remove(f)
     except Exception as e:
         logging.info(sys.exc_info()[0])
-        logging.info("error occoured in delete_all_files method : {}".format(e))
-        print("error occoured in delete_all_files method : {}".format(e))
+        logging.info("error occured in delete_all_files method : {}".format(e))
+        print("error occured in delete_all_files method : {}".format(e))
         raise e
 
 
@@ -640,7 +642,7 @@ def scrape_regular_website_2(driver, url, find_by_option, basis_index, month_ind
                         month = str(year) + '-03-01'
                     month = datetime.strptime(month, '%Y-%m-%d').date()
                     month_to_basis[month] = basis
-            #for dates April/May 21 like that
+            # for dates April/May 21 like that
             if str(raw_month[0:3]).isalnum() and raw_month[:3] in month_list and '/' in raw_month:
                 arr_months = raw_month.split()[0].split('/')
                 if len(arr_months) > 0:
@@ -651,7 +653,7 @@ def scrape_regular_website_2(driver, url, find_by_option, basis_index, month_ind
         return month_to_basis
     except Exception as e:
         print(sys.exc_info()[0])
-        print(f"error occoured with website: {url}  (scrape_regular_website_2 method), {e}")
+        print(f"error occured with website: {url}  (scrape_regular_website_2 method), {e}")
         logging.info(sys.exc_info()[0])
         logging.exception(f"error occured with website: {url} (scrape_regular_website_2 method), {e}")
         return month_to_basis
@@ -789,16 +791,13 @@ def fetch_and_insert_regular_websitedata(driver):
         logging.info("Scaraping kapa 3rd table index")
         bids = scrape_regular_website_2(driver, url="https://kaapaethanolcommodities.com/Commodities/Cash-Bids", basis_index=5,
                                         month_index=1, find_by_option=1, row_start_index=2, table_index=2, wait_by_option=1,
-                                        class_name="cashbid_table cashbid_fulltable", row_end_index=8, xpath_for_table="/html/body/form/div[4]/div[2]/div/div[4]/div/div[1]/div[2]/div/div[2]/table/thead/tr[2]/td[1]")#"/html/body/form/div[4]/div[2]/div/div[4]/div/div[1]/div[2]/div/table[3]/thead/tr[1]/td"
+                                        class_name="cashbid_table cashbid_fulltable", row_end_index=8, xpath_for_table="/html/body/form/div[4]/div[2]/div/div[4]/div/div[1]/div[2]/div/div[2]/table/thead/tr[2]/td[1]")
         if insert_into_sheet(98, bids):
             print("success for row 98")
             logging.info("success for row 98")
             logging.info(f"inserted bids are: {bids}")
 
-        bids = scrape_regular_website_2(driver, url="https://www.ldc.com/us/en/our-facilities/grand-junction-ia/cash-bids/",row_start_index=2,
-                                        wait_by_option=1, find_by_option=3, basis_index=2, table_index=0,
-                                        xpath_for_table="/html/body/div[1]/div[3]/article/div[1]/div/div[2]/div[2]/section/div/div/div/div/div/table/tbody",
-                                        row_end_index=11)#"//*[@id=\"ldc-root\"]/article/div[1]/div/div[2]/div[2]/section/div/div/div/div/div/table"
+        bids = scrape_regular_website_2(driver, url="https://www.ldc.com/us/en/our-facilities/grand-junction-ia/cash-bids/",row_start_index=2,wait_by_option=1, find_by_option=3, basis_index=2, table_index=0,xpath_for_table="/html/body/div[1]/div[3]/article/div[1]/div/div[2]/div[2]/section/div/div/div/div/div/table/tbody",row_end_index=11)
         if insert_into_sheet(103, bids):
             print("success for row 103")
             logging.info("success for row 103")
@@ -852,7 +851,7 @@ def fetch_and_insert_regular_websitedata(driver):
 
         bids = scrape_regular_website_2(driver, url="https://siouxlandethanol.com/cash-bids/", wait_by_option=1, find_by_option=1,
                                         basis_index=-2, xpath_for_table="/html/body/div[3]/div[1]/div/div/div/div/table",class_name="cashbid_table cashbid_fulltable",
-                                        row_start_index=2)#"/html/body/div[3]/div[1]/div/div/div/table"
+                                        row_start_index=2)
         if insert_into_sheet(173, bids):
             print("success for row 173")
             logging.info("success for row 173")
@@ -1255,9 +1254,9 @@ def fetch_and_insert_regular_websitedata(driver):
             logging.info(f"inserted bids are: {bids}")
     except Exception as e:
         print(sys.exc_info()[0])
-        print(f"error occoured in fetch_and_insert_regular_websitedata (fetch_and_insert_regular_websitedata method) : {e}")
+        print(f"error occured in fetch_and_insert_regular_websitedata (fetch_and_insert_regular_websitedata method) : {e}")
         logging.info(sys.exc_info()[0])
-        logging.info("error occoured in fetch_and_insert_regular_websitedata (fetch_and_insert_regular_websitedata method) : {}".format(e))
+        logging.info("error occured in fetch_and_insert_regular_websitedata (fetch_and_insert_regular_websitedata method) : {}".format(e))
         raise e
 
 
@@ -1309,7 +1308,7 @@ def kill_excel():
         raise e
 
 
-def main(bid_price_sheet):
+def main(bid_price_sheet):    
     global bid_prices
     #initializing sheet for single index.
     try:
@@ -1324,18 +1323,17 @@ def main(bid_price_sheet):
                             ,'binary/octet-stream'
                             ,'application/binary'
                             ,'application/x-unknown']
-                            
         profile = webdriver.FirefoxProfile()
         profile.set_preference('browser.download.folderList', 2)
         profile.set_preference('browser.download.manager.showWhenStarting', False)
         profile.set_preference('pdfjs.disabled', True)
         profile.set_preference('browser.helperApps.neverAsk.saveToDisk', ','.join(mime_types))
         profile.set_preference('browser.helperApps.neverAsk.openFile',','.join(mime_types))
-        driver = webdriver.Firefox(executable_path=os.getcwd()+'\\geckodriver.exe', firefox_profile=profile)
+        driver = webdriver.Firefox(executable_path=GeckoDriverManager().install(), firefox_profile=profile)
         driver.maximize_window()
         logging.info("initializing new sheet...")
         excel_app = xw.App(visible=False)
-        bid_prices = excel_app.books.open(r"\\biourja.local\biourja\India Sync\India\Automated Reports\Corn Bid\Cornbids.xlsx")
+        bid_prices = excel_app.books.open(bid_price_sheet)
         status = initialize_new_sheet(bid_prices)
         if status:
             print("new sheet created, starting the scraping process...")
@@ -1358,9 +1356,9 @@ def main(bid_price_sheet):
         bid_prices.close()
         excel_app.quit()
     except Exception as ex:
-        print("error occoured in main",ex)
+        print("error occured in main",ex)
         print(sys.exc_info()[0])
-        logging.info("error occoured in main",ex)
+        logging.info("error occured in main",ex)
         logging.info(sys.exc_info()[0])
         raise ex
         
@@ -1406,9 +1404,9 @@ def main(bid_price_sheet):
         bid_prices.save()
         logging.info("saved file finally")
     except Exception as ex:
-        print("error occoured in main",ex)
+        print("error occured in main",ex)
         print(sys.exc_info()[0])
-        logging.info("error occoured in main",ex)
+        logging.info("error occured in main",ex)
         logging.info(sys.exc_info()[0])
         raise ex
     finally:
@@ -1425,7 +1423,7 @@ def corn_bid_runner():
     time_start = time.time()
     try:
         job_id=np.random.randint(1000000,9999999)
-        logfile = os.getcwd() + '\\logs\\CornBidPrice_Logfile.txt'
+        logfile = os.getcwd() + '\\logs\\CORN_BID_PRICE_SCRAPER.txt'
         for handler in logging.root.handlers[:]:
             logging.root.removeHandler(handler)
         logging.basicConfig(
@@ -1448,13 +1446,12 @@ def corn_bid_runner():
         database="BUITDB_DEV"
         warehouse="BUIT_WH"
         receiver_email="amanullah.khan@biourja.com"
+        # DRIVER_PATH = r'S:\IT Dev\Production_Environment\corn-bid-price-automation\geckodriver.exe'
+        # DRIVER_PATH = r'S:\IT Dev\Production_Environment\chromedriver\chromedriver.exe'
         #########################################################################
 
         download_path = path + '\\download\\'
-        #chrome as a driver
         headers = {'User-Agent': 'Mozilla/5.0'}
-        DRIVER_PATH = r'S:\IT Dev\Production_Environment\corn-bid-price-automation\geckodriver.exe'
-        # DRIVER_PATH = r'S:\IT Dev\Production_Environment\chromedriver\chromedriver.exe'
         options = Options()
         
         # month list used to check name of months on websites
