@@ -552,7 +552,7 @@ def delete_all_files(folder_path:str):
 
 # the function which is used for most of the types of webistes, handles multiple cases
 def scrape_regular_website_2(driver, url, find_by_option, basis_index, month_index=0, table_name='cashbids-data-table',
-                            wait_by_option=0, time_flag=0,xpath_for_table="", class_name='DataGrid DataGridPlus', row_start_index=1, table_index=0,table_id='', iframe_xpath="", row_end_index=8):
+    wait_by_option=0, time_flag=0,xpath_for_table="", class_name='DataGrid DataGridPlus', row_start_index=1, table_index=0,table_id='', iframe_xpath="", row_end_index=8):
     month_to_basis = dict()
     try:
         year = datetime.now().date().year
@@ -1443,9 +1443,9 @@ def corn_bid_runner():
         receiver_email = credential_dict['EMAIL_LIST']
         
         ######################## Uncomment For Testing###########################
-        database="BUITDB_DEV"
-        warehouse="BUIT_WH"
-        receiver_email="amanullah.khan@biourja.com"
+        # database="BUITDB_DEV"
+        # warehouse="BUIT_WH"
+        # receiver_email="amanullah.khan@biourja.com"
         # DRIVER_PATH = r'S:\IT Dev\Production_Environment\corn-bid-price-automation\geckodriver.exe'
         # DRIVER_PATH = r'S:\IT Dev\Production_Environment\chromedriver\chromedriver.exe'
         #########################################################################
