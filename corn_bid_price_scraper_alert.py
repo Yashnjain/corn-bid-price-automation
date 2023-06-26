@@ -1094,9 +1094,11 @@ def fetch_and_insert_regular_websitedata():
         print("success for row 52")
         logger.info("success for row 52")
 
-    bids = scrape_regular_website_2(url="http://pce-coops.com/resources/cashbids/", find_by_option=1, month_index=1,
-                                    basis_index=-3, class_name="homepage_quoteboard", row_start_index=2,
-                                    iframe_xpath="//*[@id=\"post-70741\"]/div[3]/div/div/div/div/div/div/div/iframe", row_end_index=9)
+    bids = scrape_regular_website_2(driver, url="http://pce-coops.com/resources/cashbids/", find_by_option=1, month_index=1,
+                                    basis_index=-3, time_flag=1, class_name="homepage_quoteboard", row_start_index=2,
+                                    iframe_xpath="/html/body/div[2]/div[3]/div[4]/div[2]/div/div/div/div/div/div/div/iframe", row_end_index=9)
+                                    #"//*[@id=\"post-70741\"]/div[3]/div/div/div/div/div/div/div/iframe"
+
     if insert_into_sheet(4, bids):
         print("success for row 4")
         logger.info("success for row 4")
@@ -1165,7 +1167,7 @@ def main():
         starttime=datetime.now()
         logging.warning('NYISO: Start work at {} ...'.format(starttime.strftime('%Y-%m-%d %H:%M:%S')))
         logger.info("initializing new sheet...")
-        excel_app = xw.App(visible=False)
+        excel_app = xw.App(visible=True)
         #bid_prices = excel_app.books.open(r"S:\IT Dev\Production_Environment\cron-bid-price-automation\Cornbids.xlsx")
         bid_prices = excel_app.books.open(r"\\biourja.local\biourja\India Sync\India\Automated Reports\Corn Bid\Cornbids.xlsx")
         status = initialize_new_sheet(bid_prices)
@@ -1203,7 +1205,7 @@ def main():
         starttime=datetime.now()
         logging.warning('NYISO: Start work at {} ...'.format(starttime.strftime('%Y-%m-%d %H:%M:%S')))
         logger.info("initializing new sheet...")
-        excel_app = xw.App(visible=False)
+        excel_app = xw.App(visible=True)
         #bid_prices = excel_app.books.open(r"S:\IT Dev\Production_Environment\cron-bid-price-automation\Cornbids.xlsx")
         bid_prices = excel_app.books.open(r"\\biourja.local\biourja\India Sync\India\Automated Reports\Corn Bid\Cornbids.xlsx")
         status = initialize_new_sheet(bid_prices)
