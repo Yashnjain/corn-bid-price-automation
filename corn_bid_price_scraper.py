@@ -712,7 +712,7 @@ def scrape_regular_website_2(driver, url, find_by_option, basis_index, month_ind
         if time_flag:
             time.sleep(10)
         if iframe_xpath:
-            WebDriverWait(driver,90).until(EC.frame_to_be_available_and_switch_to_it(
+            WebDriverWait(driver,200).until(EC.frame_to_be_available_and_switch_to_it(
                 driver.find_element_by_xpath(iframe_xpath)))
         if wait_by_option == 1:
             a=WebDriverWait(driver, 90).until(EC.element_to_be_clickable((By.XPATH, xpath_for_table)))
