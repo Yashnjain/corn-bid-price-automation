@@ -712,8 +712,16 @@ def scrape_regular_website_2(driver, url, find_by_option, basis_index, month_ind
         if time_flag:
             time.sleep(10)
         if iframe_xpath:
-            WebDriverWait(driver,200).until(EC.frame_to_be_available_and_switch_to_it(
-                driver.find_element_by_xpath(iframe_xpath)))
+            try:
+                WebDriverWait(driver,200,poll_frequency=5).until(EC.frame_to_be_available_and_switch_to_it(
+                    driver.find_element_by_xpath(iframe_xpath)))
+            except Exception as e:
+                try:
+                   time.sleep(2)
+                   WebDriverWait(driver,10,poll_frequency=5).until(EC.frame_to_be_available_and_switch_to_it(
+                    driver.find_element_by_xpath(iframe_xpath)))
+                except Exception as e:
+                    raise e
         if wait_by_option == 1:
             a=WebDriverWait(driver, 90).until(EC.element_to_be_clickable((By.XPATH, xpath_for_table)))
         elif wait_by_option == 2:
@@ -876,7 +884,12 @@ def fetch_and_insert_regular_websitedata(driver):
             logging.info("success for row 122 and 125")
             logging.info(f"inserted bids are: {bids}")
             time.sleep(10)
-
+        bids = scrape_regular_website_2(driver, url="https://www.cargillag.com/check-prices?location=46790", 
+                                        find_by_option=1, basis_index=-2,class_name = 'table__main bids-table__main')
+        if insert_into_sheet(85, bids):
+            print("success for row 85")
+            logging.info("success for row 85")
+            logging.info(f"inserted bids are: {bids}")
         bids = scrape_regular_website_2(driver, url="https://www.hankinsonre.com/janesville", wait_by_option=1, basis_index=4,
                                         month_index=0, find_by_option=1, class_name="cashbid_table",
                                         row_start_index=1,
