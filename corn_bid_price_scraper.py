@@ -929,16 +929,16 @@ def fetch_and_insert_regular_websitedata(driver):
             logging.info(f"inserted bids are: {bids}")
     
 
-        bids = scrape_regular_website_2(driver, url=xw.Range("G72").value, wait_by_option=3,
+        bids = scrape_regular_website_2(driver, url="http://www.granitefallsenergy.com/corn-cash-bids/".value, wait_by_option=3,
                                         find_by_option=1, basis_index=4, class_name="cashbid_table")
         if insert_into_sheet(72, bids):
             print("success for row 72")
             logging.info("success for row 72")
             logging.info(f"inserted bids are: {bids}")
 
-        bids = scrape_regular_website_2(driver, url=xw.Range("G68").value, wait_by_option=4, table_id="dpTable1",
+        bids = scrape_regular_website_2(driver, url="https://www.ggecorn.com/cash-bids%2Fcustomers", wait_by_option=4, table_id="dpTable1",
                                         find_by_option=3, basis_index=3)
-        bids = scrape_regular_website_2(driver, iframe_xpath='//*[@id="iframe-03"]',url=xw.Range("G68").value, wait_by_option=3, class_name="cashbid_table",
+        bids = scrape_regular_website_2(driver, iframe_xpath='//*[@id="iframe-03"]',url="https://www.ggecorn.com/cash-bids%2Fcustomers", wait_by_option=3, class_name="cashbid_table",
                                         find_by_option=1, basis_index=4)
         bids = scrape_ggcorn(driver, "https://www.ggecorn.com/cash-bids%2Fcustomers",iframe_xpath = "//span[@data-ux='Element']//iframe")
         if insert_into_sheet(68, bids):
@@ -986,7 +986,7 @@ def fetch_and_insert_regular_websitedata(driver):
         # bids = scrape_regular_website_2(driver, url=xw.Range("G101").value, wait_by_option=2,
         #                                 find_by_option=1, basis_index=-1,
         #                                 iframe_xpath="/html/body/table[2]/tbody/tr/td[2]/table[2]/tbody/tr/td[1]/iframe", row_end_index=8)
-        bids = scrape_regular_website_2(driver, url=xw.Range("G101").value, wait_by_option=3,
+        bids = scrape_regular_website_2(driver, url="https://www.lincolnwayenergy.com/corn-bids/".value, wait_by_option=3,
                                         find_by_option=1, basis_index=-2,class_name="cashbid_table",
                                         row_end_index=8)
         if insert_into_sheet(101, bids):
