@@ -929,7 +929,7 @@ def fetch_and_insert_regular_websitedata(driver):
             logging.info(f"inserted bids are: {bids}")
     
 
-        bids = scrape_regular_website_2(driver, url="http://www.granitefallsenergy.com/corn-cash-bids/".value, wait_by_option=3,
+        bids = scrape_regular_website_2(driver, url="http://www.granitefallsenergy.com/corn-cash-bids/", wait_by_option=3,
                                         find_by_option=1, basis_index=4, class_name="cashbid_table")
         if insert_into_sheet(72, bids):
             print("success for row 72")
@@ -986,7 +986,7 @@ def fetch_and_insert_regular_websitedata(driver):
         # bids = scrape_regular_website_2(driver, url=xw.Range("G101").value, wait_by_option=2,
         #                                 find_by_option=1, basis_index=-1,
         #                                 iframe_xpath="/html/body/table[2]/tbody/tr/td[2]/table[2]/tbody/tr/td[1]/iframe", row_end_index=8)
-        bids = scrape_regular_website_2(driver, url="https://www.lincolnwayenergy.com/corn-bids/".value, wait_by_option=3,
+        bids = scrape_regular_website_2(driver, url="https://www.lincolnwayenergy.com/corn-bids/", wait_by_option=3,
                                         find_by_option=1, basis_index=-2,class_name="cashbid_table",
                                         row_end_index=8)
         if insert_into_sheet(101, bids):
