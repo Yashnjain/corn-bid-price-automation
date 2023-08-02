@@ -1639,12 +1639,12 @@ def corn_bid_runner():
         receiver_email = credential_dict['EMAIL_LIST']
         
         ######################## Uncomment For Testing###########################
-        database="BUITDB_DEV"
-        warehouse="BUIT_WH"
-        receiver_email="amanullah.khan@biourja.com,deep.durugkar@biourja.com,imam.khan@biourja.com,yashn.jain@biourja.com"
-        # DRIVER_PATH = r'S:\IT Dev\Production_Environment\corn-bid-price-automation\geckodriver.exe'
-        # DRIVER_PATH = r'S:\IT Dev\Production_Environment\chromedriver\chromedriver.exe'
-        bid_price_sheet = r"E:\testingEnvironment\J_local_drive\India\Automated Reports\Corn Bid\Cornbids.xlsx"
+        # database="BUITDB_DEV"
+        # warehouse="BUIT_WH"
+        # receiver_email="amanullah.khan@biourja.com,deep.durugkar@biourja.com,imam.khan@biourja.com,yashn.jain@biourja.com"
+        # # DRIVER_PATH = r'S:\IT Dev\Production_Environment\corn-bid-price-automation\geckodriver.exe'
+        # # DRIVER_PATH = r'S:\IT Dev\Production_Environment\chromedriver\chromedriver.exe'
+        # bid_price_sheet = r"E:\testingEnvironment\J_local_drive\India\Automated Reports\Corn Bid\Cornbids.xlsx"
         job_name = "BIO-PAD01_"+job_name
         #########################################################################
 
