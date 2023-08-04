@@ -1698,7 +1698,6 @@ def corn_bid_runner():
         sys.exit(-1)
     time_end = time.time()
     logging.warning('It took {} seconds to run.'.format(time_end - time_start))
-    print('It took {} seconds to run.'.format(time_end - time_start))
     
 if __name__ == "__main__":
     corn_bid_runner()
