@@ -539,8 +539,8 @@ def scrape_eliteoctane(driver, url):
     try:
         driver.get(url)
         logging.info("scrapping eliteoctane")
-        WebDriverWait(driver, 50).until(EC.element_to_be_clickable((By.XPATH, "/html/body/div[3]/div[1]/div[2]/table/tbody/tr[1]/th[4]")))
-        for i in range(2,8):
+        WebDriverWait(driver, 50).until(EC.element_to_be_clickable((By.XPATH, "/html/body/div[3]/div[1]/div[2]/table/tbody[2]/tr[1]/th[4]")))
+        for i in range(2,8):                                                    
             month = driver.find_element_by_xpath(f"/html/body/div[3]/div[1]/div[2]/table/tbody/tr[{i}]/td[1]").text
             logging.info(month)
             if month == "":
